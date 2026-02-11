@@ -3,21 +3,39 @@ import mongoose from "mongoose";
 const expenseSchema = mongoose.Schema(
   {
     description: {
+      type: String,
       required: true,
     },
     amount: {
+      type: Number,
       required: true,
     },
     paidBy: {
       required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    splitAmong: {
-      required: true
-    },
+    splitAmong: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     groupId: {
-        required: true,
-        unique: true
-    }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: true,
+    },
+    splitType: {
+      type: String,
+      enum: ["equal", "percentage", "custom"],
+    },
+    shares: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        amount: Number,
+      },
+    ],
   },
   { timestamps: true },
 );
