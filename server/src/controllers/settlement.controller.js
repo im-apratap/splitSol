@@ -11,9 +11,8 @@ import {
   connection,
 } from "../utils/solana.js";
 
-/**
- * Calculate net balances for a group (reused from expense controller logic).
- */
+
+// Calculate net balances for a group (reused from expense controller logic).
 const calculateNetBalances = async (groupId) => {
   const group = await Group.findById(groupId).populate(
     "members",
@@ -96,10 +95,8 @@ const calculateNetBalances = async (groupId) => {
   return { group, settlements };
 };
 
-/**
- * Create settlement transactions for a group.
- * Returns unsigned transactions for the debtor to sign on the mobile app.
- */
+// Create settlement transactions for a group.
+// Returns unsigned transactions for the debtor to sign on the mobile app.
 export const createSettlement = async (req, res, next) => {
   try {
     const { groupId } = req.body;
@@ -165,6 +162,14 @@ export const createSettlement = async (req, res, next) => {
       toUser: memberMap[s.to],
     }));
 
+    // Create on-chain memo
+    const memo = JSON.stringify({
+      type: "settlement",
+      groupId: group._id,
+      groupName: group.name,
+      note: "Settled via SplitSol",
+    });
+
     // Use batch transaction if multiple creditors
     let transactionData;
     if (transfers.length === 1) {
@@ -172,11 +177,13 @@ export const createSettlement = async (req, res, next) => {
         userPubKey,
         transfers[0].toPubkey,
         transfers[0].amountInSOL,
+        memo,
       );
     } else {
       transactionData = await buildBatchTransferTransaction(
         userPubKey,
         transfers,
+        memo,
       );
     }
 
@@ -216,10 +223,8 @@ export const createSettlement = async (req, res, next) => {
   }
 };
 
-/**
- * Confirm a settlement after the mobile app submits the signed transaction.
- * The app sends the tx signature for verification.
- */
+// Confirm a settlement after the mobile app submits the signed transaction.
+// The app sends the tx signature for verification.
 export const confirmSettlement = async (req, res, next) => {
   try {
     const { settlementIds, txSignature } = req.body;
@@ -267,10 +272,8 @@ export const confirmSettlement = async (req, res, next) => {
   }
 };
 
-/**
- * Submit a signed transaction from the mobile app.
- * Broadcasts to Solana, then confirms the settlements.
- */
+// Submit a signed transaction from the mobile app.
+// Broadcasts to Solana, then confirms the settlements.
 export const submitSignedTransaction = async (req, res, next) => {
   try {
     const { signedTransaction, settlementIds } = req.body;
@@ -336,9 +339,7 @@ export const submitSignedTransaction = async (req, res, next) => {
   }
 };
 
-/**
- * Get all settlements for a group.
- */
+// Get all settlements for a group.
 export const getGroupSettlements = async (req, res, next) => {
   try {
     const { groupId } = req.params;
@@ -358,9 +359,7 @@ export const getGroupSettlements = async (req, res, next) => {
   }
 };
 
-/**
- * Get wallet balance for the current user.
- */
+// Get wallet balance for the current user.
 export const getWalletBalance = async (req, res, next) => {
   try {
     const pubKey = req.user.pubKey;
