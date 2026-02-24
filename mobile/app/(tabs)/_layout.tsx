@@ -1,0 +1,50 @@
+import { Tabs } from "expo-router";
+import { FontAwesome5 } from "@expo/vector-icons";
+import { colors } from "../../src/theme/colors";
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: colors.surface,
+          shadowColor: "transparent", // Remove shadow on iOS
+          elevation: 0, // Remove shadow on Android
+        },
+        headerTintColor: colors.text,
+        headerTitleStyle: {
+          fontWeight: "700",
+        },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+      }}
+    >
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Dashboard",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome5 name="home" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome5 name="user" size={24} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
