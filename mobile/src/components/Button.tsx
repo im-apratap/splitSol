@@ -38,11 +38,14 @@ export const Button: React.FC<ButtonProps> = ({
     textColor = colors.background;
   } else if (variant === "outline") {
     backgroundColor = "transparent";
-    borderColor = colors.primary;
+    borderColor = colors.border;
     borderWidth = 1;
     textColor = colors.primary;
   } else if (variant === "danger") {
-    backgroundColor = colors.error;
+    backgroundColor = colors.surface;
+    borderColor = colors.border;
+    borderWidth = 1;
+    textColor = colors.error;
   }
 
   return (
@@ -70,13 +73,13 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 999, // Pill shape
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 8,
-    minHeight: 52,
+    marginVertical: 10,
+    minHeight: 60,
   },
   disabled: {
     opacity: 0.6,

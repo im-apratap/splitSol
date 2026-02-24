@@ -1,7 +1,7 @@
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { colors } from "../src/theme/colors";
 
 export default function RootLayout() {
@@ -13,6 +13,10 @@ export default function RootLayout() {
 
   const checkToken = async () => {
     try {
+      if (Platform.OS === "web") {
+        setIsAuthenticated(false);
+        return;
+      }
       const token = await AsyncStorage.getItem("accessToken");
       if (token) {
         setIsAuthenticated(true);

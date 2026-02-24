@@ -1,12 +1,12 @@
 export const colors = {
-  background: "#0f111a",
-  surface: "#1c1f2e",
-  surfaceLight: "#2a2d3d",
-  primary: "#9945FF", // Solana Purple
-  secondary: "#14F195", // Solana Green
-  text: "#FFFFFF",
-  textMuted: "#9CA3AF",
-  border: "#2a2d3d",
+  background: "#F2F4F7",
+  surface: "#FFFFFF",
+  surfaceLight: "#F9FAFB",
+  primary: "#1A1D1F",
+  secondary: "#9945FF",
+  text: "#1A1D1F",
+  textMuted: "#889098",
+  border: "#EAECF0",
   error: "#FF4D4D",
   success: "#14F195",
 };

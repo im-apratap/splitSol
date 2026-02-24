@@ -7,7 +7,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { router } from "expo-router";
+import { router, Link } from "expo-router";
 import { Container } from "../../src/components/Container";
 import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
@@ -30,11 +30,14 @@ export default function LoginScreen() {
     setError("");
 
     try {
-      const response = await apiClient.post("/users/login", {
-        email: emailOrUsername.includes("@") ? emailOrUsername : undefined,
-        username: !emailOrUsername.includes("@") ? emailOrUsername : undefined,
-        password,
-      });
+      const payload: any = { password };
+      if (emailOrUsername.includes("@")) {
+        payload.email = emailOrUsername.toLowerCase().trim();
+      } else {
+        payload.username = emailOrUsername.toLowerCase().trim();
+      }
+
+      const response = await apiClient.post("/users/login", payload);
 
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
@@ -93,12 +96,9 @@ export default function LoginScreen() {
               <Text style={styles.footerText}>
                 Don&apos;t have an account?{" "}
               </Text>
-              <Text
-                style={styles.linkText}
-                onPress={() => router.push("/(auth)/register")}
-              >
-                Sign Up
-              </Text>
+              <Link href="/(auth)/register" asChild>
+                <Text style={styles.linkText}>Sign Up</Text>
+              </Link>
             </View>
           </View>
         </ScrollView>
@@ -123,11 +123,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: "800",
-    color: colors.text,
+    color: colors.primary, // Dark charcoal
     letterSpacing: -1,
   },
   highlight: {
-    color: colors.primary,
+    color: colors.secondary, // Green or Purple accent
   },
   subtitle: {
     fontSize: 16,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkText: {
-    color: colors.secondary,
+    color: colors.primary, // Dark prominent link
     fontSize: 14,
     fontWeight: "700",
   },

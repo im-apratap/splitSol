@@ -101,7 +101,6 @@ export default function ProfileScreen() {
 
         <Button
           title="Sign Out"
-          variant="danger"
           onPress={handleLogout}
           style={styles.logoutBtn}
           textStyle={{ fontWeight: "700" }}
@@ -136,12 +135,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
+    fontWeight: "800",
+    color: colors.primary, // Dark black text
   },
   username: {
     fontSize: 16,
-    color: colors.primary,
+    color: colors.textMuted,
+    fontWeight: "600",
     marginTop: 4,
   },
   email: {
@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
+    fontWeight: "700",
+    color: colors.primary,
     marginBottom: 12,
   },
   walletCard: {
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   walletKey: {
-    color: colors.text,
+    color: colors.primary,
     fontSize: 14,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },

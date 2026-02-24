@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Text, ScrollView } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Container } from "../../src/components/Container";
 import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 
-export default function CreateGroupScreen() {
-  const [name, setName] = useState("");
+export default function AddMemberScreen() {
+  const { groupId } = useLocalSearchParams();
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleCreateGroup = async () => {
-    if (!name.trim()) {
-      setError("Group name is required");
+  const handleAddMember = async () => {
+    if (!username.trim()) {
+      setError("Please enter a username");
       return;
     }
 
@@ -22,13 +23,14 @@ export default function CreateGroupScreen() {
     setError("");
 
     try {
-      const res = await apiClient.post("/groups", { name });
-      const newGroup = res.data.data;
-
-      router.replace(`/group/${newGroup._id}` as any);
+      await apiClient.post(`/groups/${groupId}/members`, {
+        username: username.trim(),
+      });
+      // Navigate back to the group details screen, resolving the promise
+      router.back();
     } catch (err: any) {
       setError(
-        err.response?.data?.message || err.message || "Failed to create group",
+        err.response?.data?.message || err.message || "Failed to add user",
       );
     } finally {
       setLoading(false);
@@ -39,26 +41,29 @@ export default function CreateGroupScreen() {
     <Container>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>New Group</Text>
-          <Text style={styles.subtitle}>Create a group to share expenses</Text>
+          <Text style={styles.title}>Add Member</Text>
+          <Text style={styles.subtitle}>
+            Invite someone to the group using their SplitSOL username.
+          </Text>
         </View>
 
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Input
-            label="Group Name"
-            placeholder="e.g. Goa Trip, Apartment Rent"
-            value={name}
-            onChangeText={setName}
+            label="Username"
+            placeholder="e.g. solanawhale"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
             autoFocus
           />
 
           <Button
-            title="Create Group"
-            onPress={handleCreateGroup}
+            title="Add to Group"
+            onPress={handleAddMember}
             loading={loading}
-            style={styles.createButton}
+            style={styles.actionButton}
           />
 
           <Button
@@ -94,7 +99,7 @@ const styles = StyleSheet.create({
   form: {
     width: "100%",
   },
-  createButton: {
+  actionButton: {
     marginTop: 24,
     marginBottom: 12,
   },

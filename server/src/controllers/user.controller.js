@@ -37,9 +37,12 @@ export const registerUser = async (req, res, next) => {
       throw new ApiError(400, "All fields are required");
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }, { pubKey }],
-    });
+    const query = [];
+    if (email) query.push({ email });
+    if (username) query.push({ username });
+    if (pubKey) query.push({ pubKey });
+
+    const existingUser = await User.findOne({ $or: query });
     if (existingUser) {
       throw new ApiError(
         400,
@@ -94,9 +97,11 @@ export const loginUser = async (req, res, next) => {
       throw new ApiError(400, "Password is required");
     }
 
-    const user = await User.findOne({
-      $or: [{ email }, { username }],
-    });
+    const query = [];
+    if (email) query.push({ email });
+    if (username) query.push({ username });
+
+    const user = await User.findOne({ $or: query });
 
     if (!user) {
       throw new ApiError(400, "Invalid Credentials");
