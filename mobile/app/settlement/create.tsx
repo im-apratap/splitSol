@@ -13,6 +13,7 @@ import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 
 export default function CreateSettlementScreen() {
   const { groupId } = useLocalSearchParams();
@@ -21,25 +22,62 @@ export default function CreateSettlementScreen() {
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [balances, setBalances] = useState<any[]>([]);
+  const [settlements, setSettlements] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
-  const fetchMembers = React.useCallback(async () => {
+  const fetchData = React.useCallback(async () => {
     try {
+      // Fetch current User profile
+      const userRes = await apiClient.get("/users/me");
+      const loggedInUserId = userRes.data.data._id;
+      setCurrentUserId(loggedInUserId);
+
+      // Fetch group members
       const res = await apiClient.get(`/groups/${groupId}`);
-      setMembers(res.data.data.members);
-      if (res.data.data.members.length > 0) {
-        // Just defaulting to the first member for simplicity in the UI preview
-        setToUserId(res.data.data.members[0]._id);
+      const otherMembers = res.data.data.members.filter(
+        (m: any) => m._id !== loggedInUserId,
+      );
+      setMembers(otherMembers);
+
+      // Fetch group balances to know who the user owes
+      const balanceRes = await apiClient.get(`/expenses/balances/${groupId}`);
+      setBalances(balanceRes.data.data.balances);
+      setSettlements(balanceRes.data.data.settlements);
+
+      if (otherMembers.length > 0) {
+        setToUserId(otherMembers[0]._id);
       }
-    } catch {
-      setError("Failed to fetch group members");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch group data");
     }
   }, [groupId]);
 
   useEffect(() => {
     if (groupId) {
-      fetchMembers();
+      fetchData();
     }
-  }, [groupId, fetchMembers]);
+  }, [groupId, fetchData]);
+
+  useEffect(() => {
+    if (toUserId && settlements.length > 0 && currentUserId) {
+      const oweThem = settlements.find(
+        (s) => s.to._id === toUserId && s.from._id === currentUserId,
+      );
+      const theyOwe = settlements.find(
+        (s) => s.from._id === toUserId && s.to._id === currentUserId,
+      );
+
+      if (oweThem) {
+        setAmount(oweThem.amount.toString());
+      } else if (theyOwe) {
+        setAmount(theyOwe.amount.toString());
+      } else {
+        setAmount("");
+      }
+    }
+  }, [toUserId, settlements, currentUserId]);
 
   const handleSettle = async () => {
     if (!toUserId || !amount || isNaN(Number(amount))) {
@@ -51,17 +89,16 @@ export default function CreateSettlementScreen() {
     setError("");
 
     try {
-      // Create Pending Settlement logic
       const res = await apiClient.post("/settlements/create", {
         groupId,
         toUserId,
         amount: Number(amount),
       });
 
-      // In a full mobile App runtime with web3js we would invoke the Deep Link / Wallet Provider here
-      // For now we simulate confirmation
       await apiClient.post("/settlements/confirm", {
-        settlementId: res.data.data._id,
+        settlementIds: res.data.data.settlements.map(
+          (s: any) => s.settlementId,
+        ),
         txSignature:
           "simulated_mobile_tx_signature_" +
           Math.random().toString(36).substring(7),
@@ -98,12 +135,35 @@ export default function CreateSettlementScreen() {
           {members.length === 0 ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
-            <Input
-              label="Select Beneficiary User ID (Simulated drop down)"
-              placeholder="User ID"
-              value={toUserId}
-              onChangeText={setToUserId}
-            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Who are you paying?</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={toUserId}
+                  onValueChange={(itemValue) => setToUserId(itemValue)}
+                  style={styles.picker}
+                  dropdownIconColor={colors.primary}
+                >
+                  {members.map((m) => {
+                    const oweThem = settlements.find(
+                      (s) => s.to._id === m._id && s.from._id === currentUserId,
+                    );
+                    const theyOwe = settlements.find(
+                      (s) => s.from._id === m._id && s.to._id === currentUserId,
+                    );
+                    let label = m.name || m.username;
+                    if (oweThem) {
+                      label += ` (You owe $${oweThem.amount.toFixed(2)})`;
+                    } else if (theyOwe) {
+                      label += ` (Owes you $${theyOwe.amount.toFixed(2)})`;
+                    }
+                    return (
+                      <Picker.Item key={m._id} label={label} value={m._id} />
+                    );
+                  })}
+                </Picker>
+              </View>
+            </View>
           )}
 
           <Input
@@ -179,5 +239,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     fontSize: 14,
+  },
+  pickerContainer: {
+    marginBottom: 16,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  pickerWrapper: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden", // Ensures picker doesn't bleed out of rounded corners
+  },
+  picker: {
+    height: 56,
+    width: "100%",
+    color: colors.text,
   },
 });

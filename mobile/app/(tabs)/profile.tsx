@@ -17,7 +17,9 @@ import { router } from "expo-router";
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
+  const [balance, setBalance] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkingBalance, setCheckingBalance] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -31,6 +33,19 @@ export default function ProfileScreen() {
       console.error("Failed to fetch profile", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkBalance = async () => {
+    try {
+      setCheckingBalance(true);
+      const balanceRes = await apiClient.get("/settlements/balance");
+      setBalance(`${balanceRes.data.data.balance.toFixed(4)} SOL`);
+    } catch (e) {
+      setBalance("Failed to load");
+      Alert.alert("Error", "Could not fetch balance from Solana network.");
+    } finally {
+      setCheckingBalance(false);
     }
   };
 
@@ -94,6 +109,23 @@ export default function ProfileScreen() {
             >
               {user?.pubKey || "Not Set"}
             </Text>
+
+            <View style={styles.balanceContainer}>
+              {balance === null ? (
+                <Button
+                  title="Check SOL Balance"
+                  onPress={checkBalance}
+                  loading={checkingBalance}
+                  variant="outline"
+                  style={styles.checkBalanceBtn}
+                />
+              ) : (
+                <>
+                  <Text style={styles.walletLabel}>Current Balance</Text>
+                  <Text style={styles.balanceAmount}>{balance}</Text>
+                </>
+              )}
+            </View>
           </View>
         </Card>
 
@@ -175,6 +207,20 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  balanceContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  balanceAmount: {
+    color: colors.secondary,
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  checkBalanceBtn: {
+    marginTop: 4,
   },
   logoutBtn: {
     marginBottom: 16,

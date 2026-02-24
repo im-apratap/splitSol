@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Container } from "../../src/components/Container";
 import { Card } from "../../src/components/Card";
 import { Button } from "../../src/components/Button";
@@ -45,11 +45,13 @@ export default function GroupDetailsScreen() {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (id) {
-      fetchGroupData();
-    }
-  }, [id, fetchGroupData]);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (id) {
+        fetchGroupData();
+      }
+    }, [id, fetchGroupData]),
+  );
 
   if (loading) {
     return (

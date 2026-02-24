@@ -13,7 +13,7 @@ SplitSOL is a premium Web3 bill-splitting application built securely on the Sola
 
 - **Modern Aesthetic:** A beautifully crafted, light-themed premium UI emphasizing highly rounded cards, pill buttons, and soft drop-shadows.
 - **Seamless Authentication:** Secure JWT-based login and registration flow.
-- **Group & Expense Management:** Intuitive dashboard to create groups, dynamically add members via their usernames, track balances, and add new expenses (Equal, Percentage, Custom splits).
+- **Group & Expense Management:** Intuitive dashboard to create groups, dynamically add members via their usernames, track balances, and add new expenses (Equal, Percentage, Custom splits) manually or automatically via **Gemini Vision AI Receipt Scanning**.
 - **On-Chain Settlements:** Integrated checkout to calculate owed amounts and intuitively sign/send Lamports via the Solana blockchain.
 
 ### API Server (Backend)
@@ -38,7 +38,7 @@ To run this full-stack application locally, you will need:
 1. **Clone the Repository**
 
    ```bash
-   git clone <your-repository-url>
+   git clone https://github.com/im-apratap/splitSol/
    cd splitSOL
    ```
 

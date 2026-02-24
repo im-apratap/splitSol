@@ -4,7 +4,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-
 // Fetch SOL price in a given fiat currency from CoinGecko.
 export const getSolPrice = async (req, res, next) => {
   try {
@@ -33,7 +32,6 @@ export const getSolPrice = async (req, res, next) => {
     next(new ApiError(500, "Failed to fetch SOL price"));
   }
 };
-
 
 // Scan a bill/receipt image and extract expense details using Gemini API.
 export const scanBill = async (req, res, next) => {
@@ -110,7 +108,7 @@ Rules:
           date: parsedData.date || "",
         },
         "Bill scanned successfully",
-      ),a
+      ),
     );
   } catch (error) {
     if (error instanceof ApiError) return next(error);
