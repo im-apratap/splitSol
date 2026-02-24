@@ -14,15 +14,13 @@ export const Card: React.FC<CardProps> = ({ children, style }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 32, // Highly rounded
+    padding: 24,
+    marginVertical: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5, // For Android
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05, // very soft
+    shadowRadius: 16,
+    elevation: 2,
   },
 });

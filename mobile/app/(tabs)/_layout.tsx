@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { colors } from "../../src/theme/colors";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -17,14 +18,14 @@ export default function TabLayout() {
           fontWeight: "700",
         },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 8,
+          backgroundColor: "#1A1D1F",
+          borderTopWidth: 0,
+          height: Platform.OS === "ios" ? 85 : 65,
+          paddingBottom: Platform.OS === "ios" ? 24 : 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: "#FFFFFF",
+        tabBarInactiveTintColor: "#889098",
       }}
     >
       <Tabs.Screen

@@ -48,9 +48,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: 999, // Pill shaped input
+    paddingHorizontal: 24,
+    paddingVertical: 18,
     color: colors.text,
     fontSize: 16,
   },

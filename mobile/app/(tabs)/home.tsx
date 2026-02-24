@@ -17,19 +17,24 @@ import { router } from "expo-router";
 
 export default function HomeScreen() {
   const [groups, setGroups] = useState([]);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchGroups = async () => {
+  const fetchData = async () => {
     try {
       setError("");
       // Using standard REST
-      const res = await apiClient.get("/groups");
-      setGroups(res.data.data || []);
+      const [groupsRes, userRes] = await Promise.all([
+        apiClient.get("/groups"),
+        apiClient.get("/users/me"),
+      ]);
+      setGroups(groupsRes.data.data || []);
+      setUser(userRes.data.data);
     } catch (err: any) {
       setError(
-        err.response?.data?.message || err.message || "Failed to load groups",
+        err.response?.data?.message || err.message || "Failed to load data",
       );
     } finally {
       setLoading(false);
@@ -38,34 +43,36 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    fetchGroups();
+    fetchData();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchGroups();
+    fetchData();
   };
 
   const renderGroupItem = ({ item }: { item: any }) => (
     <Card style={styles.groupCard}>
-      <View style={styles.groupHeader}>
-        <View style={styles.groupIconContainer}>
-          <FontAwesome5 name="users" size={20} color={colors.primary} />
-        </View>
+      <View style={styles.groupCardImagePlaceholder}>
+        <FontAwesome5 name="layer-group" size={32} color={colors.primary} />
+      </View>
+      <View style={styles.groupInfoRow}>
         <View style={styles.groupInfo}>
           <Text style={styles.groupName}>{item.name}</Text>
           <Text style={styles.memberCount}>
             {item.members?.length || 0} members
           </Text>
         </View>
+        <Button
+          title=""
+          variant="primary"
+          style={styles.floatingArrowBtn}
+          onPress={() => router.push(`/group/${item._id}` as any)}
+        />
+        <View pointerEvents="none" style={styles.iconOverlay}>
+          <FontAwesome5 name="chevron-right" size={16} color="#FFFFFF" />
+        </View>
       </View>
-      {/* We can navigate to individual group later */}
-      <Button
-        title="View Group"
-        variant="outline"
-        style={styles.viewBtn}
-        onPress={() => router.push(`/group/${item._id}` as any)}
-      />
     </Card>
   );
 
@@ -80,24 +87,32 @@ export default function HomeScreen() {
   return (
     <Container>
       <View style={styles.content}>
-        {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
-          <Button
-            title="Create New Group"
-            onPress={() => router.push("/group/create" as any)}
-            style={styles.createBtn}
-          />
+        <View style={styles.header}>
+          <Text style={styles.greetingTitle}>
+            Hello, {user?.name?.split(" ")[0] || "User"}
+          </Text>
+          <Text style={styles.greetingSubtitle}>Welcome to SplitSOL</Text>
+        </View>
+
+        {/* Categories / Pill filters simulation */}
+        <View style={styles.filtersContainer}>
+          <View style={[styles.filterPill, styles.filterPillActive]}>
+            <Text style={styles.filterPillTextActive}>Your Groups</Text>
+          </View>
+          <View style={styles.filterPill}>
+            <Text style={styles.filterPillText}>Recent</Text>
+          </View>
+          <View style={styles.filterPill}>
+            <Text style={styles.filterPillText}>Settled</Text>
+          </View>
         </View>
 
         {error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
-            <Button title="Retry" onPress={fetchGroups} variant="secondary" />
+            <Button title="Retry" onPress={fetchData} variant="secondary" />
           </View>
         ) : null}
-
-        {/* Groups List */}
-        <Text style={styles.sectionTitle}>Your Groups</Text>
 
         <FlatList
           data={groups}
@@ -126,6 +141,15 @@ export default function HomeScreen() {
             />
           }
         />
+
+        {/* Floating Add Button overlaying the bottom padding */}
+        <View style={styles.floatingActionWrapper}>
+          <Button
+            title="+ Create Group"
+            onPress={() => router.push("/group/create" as any)}
+            style={styles.floatingAddBtn}
+          />
+        </View>
       </View>
     </Container>
   );
@@ -134,59 +158,112 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
   },
   centerElement: {
     alignItems: "center",
     justifyContent: "center",
   },
-  actionsContainer: {
+  header: {
+    marginTop: 24,
     marginBottom: 24,
   },
-  createBtn: {
-    width: "100%",
+  greetingTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: colors.primary, // Dark black text
+    letterSpacing: -0.5,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 16,
+  greetingSubtitle: {
+    fontSize: 16,
+    color: colors.textMuted,
+    marginTop: 6,
+  },
+  filtersContainer: {
+    flexDirection: "row",
+    marginBottom: 24,
+  },
+  filterPill: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterPillText: {
+    color: colors.textMuted,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  filterPillTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 14,
   },
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
   groupCard: {
-    marginBottom: 16,
+    padding: 16, // Override standard card padding for tighter image bounds
   },
-  groupHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  groupIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  groupCardImagePlaceholder: {
     backgroundColor: colors.surfaceLight,
+    height: 140,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginBottom: 16,
+  },
+  groupInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   groupInfo: {
     flex: 1,
   },
   groupName: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "600",
+    color: colors.primary,
+    fontSize: 20,
+    fontWeight: "700",
   },
   memberCount: {
     color: colors.textMuted,
     fontSize: 14,
-    marginTop: 4,
+    marginTop: 6,
   },
-  viewBtn: {
+  floatingArrowBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24, // perfectly circular
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     marginVertical: 0,
+    minHeight: 0, // override generic button minHeight
+  },
+  iconOverlay: {
+    position: "absolute",
+    right: 16,
+  },
+  floatingActionWrapper: {
+    position: "absolute",
+    bottom: 24,
+    left: 24,
+    right: 24,
+  },
+  floatingAddBtn: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyContainer: {
     alignItems: "center",
@@ -195,13 +272,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.textMuted,
-    marginTop: 16,
+    marginTop: 20,
     fontSize: 16,
+    fontWeight: "500",
   },
   errorContainer: {
     padding: 16,
     backgroundColor: "rgba(255, 77, 77, 0.1)",
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 24,
     alignItems: "center",
   },

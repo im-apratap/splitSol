@@ -119,7 +119,6 @@ export default function CreateSettlementScreen() {
             onPress={handleSettle}
             loading={loading}
             style={styles.actionButton}
-            variant="secondary"
           />
 
           <Button
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: colors.text,
+    color: colors.primary,
   },
   subtitle: {
     fontSize: 16,
@@ -155,13 +154,15 @@ const styles = StyleSheet.create({
   checkoutBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(20, 241, 149, 0.15)",
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 24,
     marginBottom: 24,
   },
   checkoutText: {
-    color: colors.secondary,
+    color: colors.primary,
     marginLeft: 12,
     fontSize: 16,
     fontWeight: "700",

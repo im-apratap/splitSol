@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   FlatList,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Container } from "../../src/components/Container";
@@ -36,7 +37,7 @@ export default function GroupDetailsScreen() {
 
       setGroup(groupRes.data.data);
       setExpenses(expRes.data.data || []);
-      setBalances(balRes.data.data || []);
+      setBalances(balRes.data.data?.balances || []);
     } catch (err: any) {
       console.error("Failed to fetch group details", err);
     } finally {
@@ -99,21 +100,24 @@ export default function GroupDetailsScreen() {
     </Card>
   );
 
-  const renderBalanceItem = ({ item }: { item: any }) => (
-    <View style={styles.balanceRow}>
-      <Text style={styles.balanceName}>{item.user?.name || "Unknown"}</Text>
-      <Text
-        style={[
-          styles.balanceAmount,
-          item.balance > 0 ? styles.balancePositive : styles.balanceNegative,
-          item.balance === 0 && styles.balanceZero,
-        ]}
-      >
-        {item.balance > 0 ? "+" : ""}
-        {item.balance.toFixed(2)}
-      </Text>
-    </View>
-  );
+  const renderBalanceItem = ({ item }: { item: any }) => {
+    const balance = item.netBalance || 0;
+    return (
+      <View style={styles.balanceRow}>
+        <Text style={styles.balanceName}>{item.user?.name || "Unknown"}</Text>
+        <Text
+          style={[
+            styles.balanceAmount,
+            balance > 0 ? styles.balancePositive : styles.balanceNegative,
+            balance === 0 && styles.balanceZero,
+          ]}
+        >
+          {balance > 0 ? "+" : ""}
+          {balance.toFixed(2)}
+        </Text>
+      </View>
+    );
+  };
 
   const renderMemberItem = ({ item }: { item: any }) => (
     <View style={styles.memberRow}>
@@ -184,7 +188,16 @@ export default function GroupDetailsScreen() {
                 </React.Fragment>
               ))}
             </Card>
-            {/* Add Member feature would go here logically */}
+            <Button
+              title="Add Member"
+              onPress={() =>
+                router.push({
+                  pathname: "/group/add-member",
+                  params: { groupId: id },
+                } as any)
+              }
+              style={{ marginTop: 16 }}
+            />
           </View>
         )}
       </View>
@@ -202,7 +215,6 @@ export default function GroupDetailsScreen() {
         />
         <Button
           title="Settle Up"
-          variant="secondary"
           onPress={() =>
             router.push({
               pathname: "/settlement/create",
@@ -229,17 +241,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background, // Match container
   },
   backBtn: {
-    padding: 8,
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 999,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.primary,
   },
   tabsContainer: {
     flexDirection: "row",
@@ -252,16 +271,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   activeTab: {
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: colors.primary,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: colors.textMuted,
   },
   activeTabText: {
     color: colors.primary,
+    fontWeight: "700",
   },
   content: {
     flex: 1,
@@ -294,9 +314,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   expenseDesc: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.primary,
   },
   expenseMeta: {
     fontSize: 12,
@@ -327,7 +347,8 @@ const styles = StyleSheet.create({
   },
   balanceName: {
     fontSize: 16,
-    color: colors.text,
+    fontWeight: "600",
+    color: colors.primary,
   },
   balanceAmount: {
     fontSize: 16,
@@ -363,7 +384,8 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 16,
-    color: colors.text,
+    fontWeight: "600",
+    color: colors.primary,
     flex: 1,
   },
   memberUsername: {
@@ -373,9 +395,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingBottom: Platform.OS === "ios" ? 32 : 16,
+    backgroundColor: colors.background, // Match container
   },
   actionBtn: {
     flex: 1,

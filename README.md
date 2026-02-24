@@ -1,38 +1,75 @@
 # SplitSOL
 
-SplitSOL is a web3 bill-splitting application built securely on the Solana blockchain. It aims to simplify the process of sharing expenses with friends, family, or colleagues with transparent on-chain settlements.
+SplitSOL is a premium Web3 bill-splitting application built securely on the Solana blockchain. Designed with a modern, clean aesthetic, SplitSOL simplifies the process of sharing expenses with friends, family, or colleagues through transparent on-chain settlements.
 
-## Features (Backend)
+![SplitSOL Overview](https://img.shields.io/badge/Status-Active-brightgreen)
+![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-blue)
+![Backend](https://img.shields.io/badge/Backend-Bun%20%7C%20Express-black)
+![Blockchain](https://img.shields.io/badge/Blockchain-Solana%20Devnet-purple)
 
-- Secure User Authentication (JWT)
-- Group Creation & Member Management
-- Expense Tracking & Splitting (Equal, Percentage, Custom)
-- Settlements recorded implicitly via Solana Blockchain Transactions (Devnet)
+## 🌟 Key Features
 
-## Mobile App Overview (Current Implementation Stage)
+### Mobile Application (Frontend)
 
-The mobile app is currently under construction and is being built with **Expo Router** and React Native.
+- **Modern Aesthetic:** A beautifully crafted, light-themed premium UI emphasizing highly rounded cards, pill buttons, and soft drop-shadows.
+- **Seamless Authentication:** Secure JWT-based login and registration flow.
+- **Group & Expense Management:** Intuitive dashboard to create groups, dynamically add members via their usernames, track balances, and add new expenses (Equal, Percentage, Custom splits).
+- **On-Chain Settlements:** Integrated checkout to calculate owed amounts and intuitively sign/send Lamports via the Solana blockchain.
 
-**Currently Completed Mobile App Foundation:**
+### API Server (Backend)
 
-1. **Modern Aesthetic / UI Setup:** Theming established with a sleek dark mode (`#0f111a`, `#1c1f2e`) layered with Solana's brand colors (Purple `#9945FF` and Green `#14F195`).
-2. **Reusable UI Library:** Constructed premium core components including `Button`, `Input`, `Card`, and `Container`, aimed to provide a "glassmorphism" inspired web3 appeal.
-3. **API Client:** Setup configured Axios instance with automatic JWT header injection handling through React Native's `AsyncStorage`. Dynamically points to localhost (for iOS/Android simulators).
+- **High-Performance Runtime:** Powered by Bun and Express for incredibly fast iterations and low latency.
+- **Robust Security:** JWT implementation and secure password hashing.
+- **NoSQL Database:** MongoDB integration for flexible group, user, and expense schema management.
+- **Smart Querying:** Optimized data fetching for real-time balance calculations and settlement tracking.
 
-## Upcoming Development (Mobile App)
+## 🚀 Getting Started
 
-- **Authentication Screens:** Register and Login screens to interact with the existing backend.
-- **Dashboard (/tabs):** The main entry displaying current groups and overall SOL balances.
-- **Group Management:** Creating groups, adding friends via public key or username, and listing past expenses.
-- **Settlement & Checkout:** Interactive screens calculating owed amounts, ultimately signing and sending Lamports directly through standard Solana wallet interactions.
+### Prerequisites
 
-## Prerequisites to Run
+To run this full-stack application locally, you will need:
 
-- `Node.js` v18+
-- `Bun` (preferred package manager)
-- `Expo CLI`
-- MongoDB instances running (for backend)
+- [Bun](https://bun.sh/) (Primary package manager and runtime)
+- [Expo CLI](https://expo.dev/) installed globally or via npx
+- A running MongoDB instance (Local or Atlas)
 
----
+### Installation & Setup
 
-_This repository contains both a `server/` (Node/Express) and an Expo `mobile/` client application._
+1. **Clone the Repository**
+
+   ```bash
+   git clone <your-repository-url>
+   cd splitSOL
+   ```
+
+2. **Start the Backend**
+   Navigate to the `server/` directory, install dependencies, and start the development server.
+
+   ```bash
+   cd server
+   bun install
+   bun start
+   ```
+
+3. **Start the Mobile App**
+   Open a new terminal, navigate to the `mobile/` directory, install dependencies, and start Expo.
+
+   ```bash
+   cd mobile
+   bun install
+   bun start
+   ```
+
+   _Use the Expo Go app on your physical device or run it on an iOS Simulator / Android Emulator._
+
+   > [!TIP]
+   > **Smart Local Networking:** The mobile app automatically routes to your local backend server! It uses `localhost` for iOS Simulators and automatically maps to `10.0.2.2` for Android Emulators out of the box.
+   >
+   > **Using a Physical Device?** Expo Go on a real phone cannot access your computer's `localhost`. Create an `.env` file in the `mobile/` directory and set `EXPO_PUBLIC_API_URL=http://<YOUR_COMPUTER_WIFI_IP>:8000/api`.
+
+## 🏗 System Architecture
+
+_This repository is structured as a monorepo containing both the backend service and the mobile client._
+
+- **`/server`**: The Bun/Express API that acts as the source of truth for all users, groups, and expenses.
+- **`/mobile`**: The Expo React Native application offering a premium interface to interact with the API and the Solana blockchain.

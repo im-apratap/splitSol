@@ -7,7 +7,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { router } from "expo-router";
+import { router, Link } from "expo-router";
 import { Container } from "../../src/components/Container";
 import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
@@ -112,17 +112,13 @@ export default function RegisterScreen() {
               onPress={handleRegister}
               loading={loading}
               style={styles.registerButton}
-              variant="secondary"
             />
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
-              <Text
-                style={styles.linkText}
-                onPress={() => router.push("/(auth)/login")}
-              >
-                Sign In
-              </Text>
+              <Link href="/(auth)/login" asChild>
+                <Text style={styles.linkText}>Sign In</Text>
+              </Link>
             </View>
           </View>
         </ScrollView>
@@ -147,7 +143,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: colors.text,
+    color: colors.primary,
   },
   subtitle: {
     fontSize: 16,
