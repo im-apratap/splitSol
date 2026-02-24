@@ -11,8 +11,9 @@ const MEMO_PROGRAM_ID = new PublicKey(
   "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcQb",
 );
 
-// Connect to Solana devnet
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+// Connect to Solana network (default: devnet)
+const network = process.env.SOLANA_NETWORK || "devnet";
+const connection = new Connection(clusterApiUrl(network), "confirmed");
 
 // Build a SOL transfer transaction (unsigned).
 // The mobile app must sign it with the user's wallet.

@@ -5,22 +5,26 @@ import {
   TextInput as RNTextInput,
   StyleSheet,
   TextInputProps,
+  ViewStyle,
+  StyleProp,
 } from "react-native";
 import { colors } from "../theme/colors";
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
   style,
+  containerStyle,
   ...props
 }) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
       <RNTextInput
         style={[styles.input, error ? styles.inputError : null, style]}

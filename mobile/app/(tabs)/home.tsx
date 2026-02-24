@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -13,7 +13,7 @@ import { Card } from "../../src/components/Card";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 export default function HomeScreen() {
   const [groups, setGroups] = useState([]);
@@ -42,9 +42,11 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, []),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

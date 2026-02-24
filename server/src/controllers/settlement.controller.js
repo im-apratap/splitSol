@@ -11,7 +11,6 @@ import {
   connection,
 } from "../utils/solana.js";
 
-
 // Calculate net balances for a group (reused from expense controller logic).
 const calculateNetBalances = async (groupId) => {
   const group = await Group.findById(groupId).populate(
@@ -52,6 +51,21 @@ const calculateNetBalances = async (groupId) => {
           (share.amount / 100) * expense.amount;
       });
     }
+  }
+
+  // Fetch all confirmed settlements for this group
+  const confirmedSettlements = await Settlement.find({
+    groupId,
+    status: { $in: ["confirmed", "pending"] }, // Include pending to prevent double-settling before confirmation
+  });
+
+  // Apply settlements to balances
+  for (const settlement of confirmedSettlements) {
+    const fromId = settlement.from.toString();
+    const toId = settlement.to.toString();
+    // 'from' paid 'to', so 'from' balance increases (less debt), 'to' balance decreases (less credit)
+    if (balances[fromId] !== undefined) balances[fromId] += settlement.amount;
+    if (balances[toId] !== undefined) balances[toId] -= settlement.amount;
   }
 
   // Calculate minimum settlements using greedy algorithm
@@ -99,7 +113,7 @@ const calculateNetBalances = async (groupId) => {
 // Returns unsigned transactions for the debtor to sign on the mobile app.
 export const createSettlement = async (req, res, next) => {
   try {
-    const { groupId } = req.body;
+    const { groupId, toUserId, amount } = req.body;
 
     if (!groupId) {
       throw new ApiError(400, "groupId is required");
@@ -116,9 +130,36 @@ export const createSettlement = async (req, res, next) => {
     }
 
     // Find settlements where the current user is the debtor
-    const userSettlements = settlements.filter(
+    let userSettlements = settlements.filter(
       (s) => s.from === req.user._id.toString(),
     );
+
+    // If specific parameters are provided, override the greedy calculation
+    if (toUserId && amount) {
+      // Validate that this settlement makes sense (the user owes this person)
+      const matchingSettlement = userSettlements.find((s) => s.to === toUserId);
+      if (!matchingSettlement) {
+        throw new ApiError(
+          400,
+          "You do not owe this user anything according to the calculated balances.",
+        );
+      }
+      if (amount > matchingSettlement.amount + 0.05) {
+        // Small floating point buffer
+        throw new ApiError(
+          400,
+          `You only owe ${matchingSettlement.amount} SOL to this user.`,
+        );
+      }
+      // Replace the batch with just this single specific transfer
+      userSettlements = [
+        {
+          from: req.user._id.toString(),
+          to: toUserId,
+          amount: Number(amount),
+        },
+      ];
+    }
 
     if (userSettlements.length === 0) {
       return res

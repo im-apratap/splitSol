@@ -41,7 +41,6 @@ export default function RegisterScreen() {
         pubKey,
       });
 
-      // Registration successful, navigate to login
       router.replace("/(auth)/login");
     } catch (err: any) {
       setError(

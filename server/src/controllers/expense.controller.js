@@ -1,5 +1,6 @@
 import { Expense } from "../models/expense.model.js";
 import { Group } from "../models/group.model.js";
+import { Settlement } from "../models/settlement.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -148,6 +149,21 @@ export const getGroupBalances = async (req, res, next) => {
             (share.amount / 100) * expense.amount;
         });
       }
+    }
+
+    // Fetch all confirmed settlements for this group
+    const confirmedSettlements = await Settlement.find({
+      groupId,
+      status: { $in: ["confirmed", "pending"] },
+    });
+
+    // Apply settlements to balances
+    for (const settlement of confirmedSettlements) {
+      const fromId = settlement.from.toString();
+      const toId = settlement.to.toString();
+      // 'from' paid 'to', so 'from' balance increases (less debt), 'to' balance decreases (less credit)
+      if (balances[fromId] !== undefined) balances[fromId] += settlement.amount;
+      if (balances[toId] !== undefined) balances[toId] -= settlement.amount;
     }
 
     const settlements = calculateSettlements(balances);
