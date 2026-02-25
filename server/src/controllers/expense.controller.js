@@ -154,7 +154,7 @@ export const getGroupBalances = async (req, res, next) => {
     // Fetch all confirmed settlements for this group
     const confirmedSettlements = await Settlement.find({
       groupId,
-      status: { $in: ["confirmed", "pending"] },
+      status: "confirmed",
     });
 
     // Apply settlements to balances
@@ -258,9 +258,17 @@ export const deleteExpense = async (req, res, next) => {
       throw new ApiError(404, "Expense not found");
     }
 
-    // Only the person who paid can delete
-    if (expense.paidBy.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, "Only the payer can delete this expense");
+    const group = await Group.findById(expense.groupId);
+    if (!group) {
+      throw new ApiError(404, "Group not found");
+    }
+
+    // Any member of the group can delete the expense
+    const isMember = group.members.some(
+      (m) => m.toString() === req.user._id.toString(),
+    );
+    if (!isMember) {
+      throw new ApiError(403, "You are not a member of this group");
     }
 
     await Expense.findByIdAndDelete(expenseId);

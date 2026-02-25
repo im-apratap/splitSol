@@ -14,6 +14,7 @@ import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { signTransactionOnDevice } from "../../src/utils/solana";
 
 export default function CreateSettlementScreen() {
   const { groupId } = useLocalSearchParams();
@@ -60,7 +61,7 @@ export default function CreateSettlementScreen() {
     }
   }, [groupId, fetchData]);
 
-  useEffect(() => {
+  const handleCheckAmount = () => {
     if (toUserId && settlements.length > 0 && currentUserId) {
       const oweThem = settlements.find(
         (s) => s.to._id === toUserId && s.from._id === currentUserId,
@@ -71,13 +72,21 @@ export default function CreateSettlementScreen() {
 
       if (oweThem) {
         setAmount(oweThem.amount.toString());
+        setError(""); // Clear error
       } else if (theyOwe) {
-        setAmount(theyOwe.amount.toString());
+        setAmount("0");
+        setError(
+          `You don't owe them. They actually owe you $${theyOwe.amount.toFixed(2)}.`,
+        );
       } else {
-        setAmount("");
+        setAmount("0");
+        setError("You don't owe this user anything.");
       }
+    } else {
+      setAmount("0");
+      setError("No balances found or you don't owe anyone.");
     }
-  }, [toUserId, settlements, currentUserId]);
+  };
 
   const handleSettle = async () => {
     if (!toUserId || !amount || isNaN(Number(amount))) {
@@ -95,13 +104,21 @@ export default function CreateSettlementScreen() {
         amount: Number(amount),
       });
 
-      await apiClient.post("/settlements/confirm", {
-        settlementIds: res.data.data.settlements.map(
-          (s: any) => s.settlementId,
-        ),
-        txSignature:
-          "simulated_mobile_tx_signature_" +
-          Math.random().toString(36).substring(7),
+      const { serializedTransaction, settlements } = res.data.data;
+
+      if (!serializedTransaction) {
+        throw new Error("No transaction object received from server");
+      }
+
+      // Prompt user to sign the transaction via Phantom/Solflare
+      const signedTransaction = await signTransactionOnDevice(
+        serializedTransaction,
+      );
+
+      // Submit the signed transaction back
+      await apiClient.post("/settlements/submit", {
+        settlementIds: settlements.map((s: any) => s.settlementId),
+        signedTransaction,
       });
 
       router.back();
@@ -144,27 +161,24 @@ export default function CreateSettlementScreen() {
                   style={styles.picker}
                   dropdownIconColor={colors.primary}
                 >
-                  {members.map((m) => {
-                    const oweThem = settlements.find(
-                      (s) => s.to._id === m._id && s.from._id === currentUserId,
-                    );
-                    const theyOwe = settlements.find(
-                      (s) => s.from._id === m._id && s.to._id === currentUserId,
-                    );
-                    let label = m.name || m.username;
-                    if (oweThem) {
-                      label += ` (You owe $${oweThem.amount.toFixed(2)})`;
-                    } else if (theyOwe) {
-                      label += ` (Owes you $${theyOwe.amount.toFixed(2)})`;
-                    }
-                    return (
-                      <Picker.Item key={m._id} label={label} value={m._id} />
-                    );
-                  })}
+                  {members.map((m) => (
+                    <Picker.Item
+                      key={m._id}
+                      label={m.name || m.username}
+                      value={m._id}
+                    />
+                  ))}
                 </Picker>
               </View>
             </View>
           )}
+
+          <Button
+            title="Check Amount Owed"
+            onPress={handleCheckAmount}
+            variant="outline"
+            style={styles.checkButton}
+          />
 
           <Input
             label="Amount (in USD equivalent)"
@@ -229,6 +243,9 @@ const styles = StyleSheet.create({
   },
   form: {
     width: "100%",
+  },
+  checkButton: {
+    marginBottom: 16,
   },
   actionButton: {
     marginTop: 24,

@@ -15,6 +15,21 @@ const MEMO_PROGRAM_ID = new PublicKey(
 const network = process.env.SOLANA_NETWORK || "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
 
+// Fetch current SOL price in USD
+export const getSolPriceInUSD = async () => {
+  try {
+    const response = await fetch(
+      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT",
+    );
+    const data = await response.json();
+    return parseFloat(data.price);
+  } catch (error) {
+    console.error("Error fetching SOL price:", error);
+    // Fallback price if API fails
+    return 150.0;
+  }
+};
+
 // Build a SOL transfer transaction (unsigned).
 // The mobile app must sign it with the user's wallet.
 export const buildTransferTransaction = async (
@@ -25,7 +40,7 @@ export const buildTransferTransaction = async (
 ) => {
   const from = new PublicKey(fromPubkey);
   const to = new PublicKey(toPubkey);
-  const lamports = amountInSOL * 1000000000;
+  const lamports = Math.round(amountInSOL * 1000000000);
 
   const transaction = new Transaction();
 
@@ -87,7 +102,7 @@ export const buildBatchTransferTransaction = async (
 
   for (const { toPubkey, amountInSOL } of transfers) {
     const to = new PublicKey(toPubkey);
-    const lamports = amountInSOL * 1000000000;
+    const lamports = Math.round(amountInSOL * 1000000000);
 
     transaction.add(
       SystemProgram.transfer({

@@ -207,3 +207,22 @@ export const getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updatePubKey = async (req, res, next) => {
+  try {
+    const { pubKey } = req.body;
+    if (!pubKey) throw new ApiError(400, "pubKey is required");
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { pubKey },
+      { new: true },
+    ).select("-password -refreshToken");
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "Public key updated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};

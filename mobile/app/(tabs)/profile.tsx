@@ -14,6 +14,7 @@ import { colors } from "../../src/theme/colors";
 import { apiClient, clearTokens } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { connectWallet } from "../../src/utils/solana";
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
@@ -71,6 +72,20 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleConnectWallet = async () => {
+    try {
+      const pubKey = await connectWallet();
+      await apiClient.put("/users/pubkey", { pubKey });
+      setUser({ ...user, pubKey });
+      Alert.alert("Success", "Wallet connected successfully!");
+    } catch (err: any) {
+      console.error(err);
+      if (err?.message !== "User canceled request") {
+        Alert.alert("Error", err.message || "Failed to connect wallet.");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Container style={styles.centerElement}>
@@ -102,13 +117,22 @@ export default function ProfileScreen() {
           />
           <View style={styles.walletInfo}>
             <Text style={styles.walletLabel}>Solana Public Key</Text>
-            <Text
-              style={styles.walletKey}
-              numberOfLines={1}
-              ellipsizeMode="middle"
-            >
-              {user?.pubKey || "Not Set"}
-            </Text>
+            {user?.pubKey ? (
+              <Text
+                style={styles.walletKey}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+              >
+                {user.pubKey}
+              </Text>
+            ) : (
+              <Button
+                title="Connect Wallet"
+                onPress={handleConnectWallet}
+                variant="outline"
+                style={{ marginTop: 8 }}
+              />
+            )}
 
             <View style={styles.balanceContainer}>
               {balance === null ? (

@@ -13,6 +13,12 @@ lerna-debug.log*
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# Database & IDE
+.env*
+!.env.example
+.idea/
+.vscode/
+
 # Runtime data
 pids
 *.pid
@@ -120,4 +126,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+# End of https://mrkandreev.name/snippets/gitignore-generator/#Nodegradle-*
