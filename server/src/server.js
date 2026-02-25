@@ -10,6 +10,7 @@ import groupRoutes from "./routes/group.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import settlementRoutes from "./routes/settlement.routes.js";
 import billRoutes from "./routes/bill.routes.js";
+import friendRoutes from "./routes/friend.route.js";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/groups", groupRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/bill", billRoutes);
+app.use("/api/friends", friendRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);
