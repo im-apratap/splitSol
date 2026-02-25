@@ -9,6 +9,7 @@ import {
   verifyTransaction,
   getBalance,
   connection,
+  getSolPriceInUSD,
 } from "../utils/solana.js";
 
 // Calculate net balances for a group (reused from expense controller logic).
@@ -56,7 +57,7 @@ const calculateNetBalances = async (groupId) => {
   // Fetch all confirmed settlements for this group
   const confirmedSettlements = await Settlement.find({
     groupId,
-    status: { $in: ["confirmed", "pending"] }, // Include pending to prevent double-settling before confirmation
+    status: "confirmed",
   });
 
   // Apply settlements to balances
@@ -185,23 +186,30 @@ export const createSettlement = async (req, res, next) => {
       throw new ApiError(400, "Your wallet public key is not set");
     }
 
+    // Fetch SOL price to convert USD to SOL
+    const solPrice = await getSolPriceInUSD();
+
     // Check wallet balance
     const balance = await getBalance(userPubKey);
-    const totalOwe = userSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const totalOweUSD = userSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const totalOweSOL = totalOweUSD / solPrice;
 
-    if (balance < totalOwe) {
+    if (balance < totalOweSOL) {
       throw new ApiError(
         400,
-        `Insufficient balance. You have ${balance.toFixed(4)} SOL but owe ${totalOwe.toFixed(4)} SOL`,
+        `Insufficient balance. You have ${balance.toFixed(4)} SOL but owe ${totalOweSOL.toFixed(4)} SOL ($${totalOweUSD.toFixed(2)})`,
       );
     }
 
     // Build transfer transactions
-    const transfers = userSettlements.map((s) => ({
-      toPubkey: memberMap[s.to].pubKey,
-      amountInSOL: s.amount,
-      toUser: memberMap[s.to],
-    }));
+    const transfers = userSettlements.map((s) => {
+      const amountInSOL = s.amount / solPrice;
+      return {
+        toPubkey: memberMap[s.to].pubKey,
+        amountInSOL: Math.max(0.000000001, amountInSOL), // ensure non-zero
+        toUser: memberMap[s.to],
+      };
+    });
 
     // Create on-chain memo
     const memo = JSON.stringify({
@@ -231,12 +239,13 @@ export const createSettlement = async (req, res, next) => {
     // Save pending settlements in DB
     const settlementRecords = [];
     for (const s of userSettlements) {
+      const amountInSOL = s.amount / solPrice;
       const record = await Settlement.create({
         groupId,
         from: req.user._id,
         to: s.to,
         amount: s.amount,
-        amountInLamports: Math.round(s.amount * 1000000000),
+        amountInLamports: Math.round(amountInSOL * 1000000000),
         status: "pending",
       });
       settlementRecords.push(record);
@@ -254,7 +263,8 @@ export const createSettlement = async (req, res, next) => {
             toPubKey: memberMap[s.to].pubKey,
             amount: s.amount,
           })),
-          totalAmount: totalOwe,
+          totalAmount: totalOweSOL,
+          totalAmountUSD: totalOweUSD,
         },
         "Settlement transaction created. Sign and submit from your wallet.",
       ),

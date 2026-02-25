@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   Platform,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { Container } from "../../src/components/Container";
@@ -25,25 +26,54 @@ export default function GroupDetailsScreen() {
   const [balances, setBalances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("expenses");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const fetchGroupData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [groupRes, expRes, balRes] = await Promise.all([
+      const [groupRes, expRes, balRes, userRes] = await Promise.all([
         apiClient.get(`/groups/${id}`),
         apiClient.get(`/expenses/group/${id}`),
         apiClient.get(`/expenses/balances/${id}`),
+        apiClient.get("/users/me"),
       ]);
 
       setGroup(groupRes.data.data);
       setExpenses(expRes.data.data || []);
       setBalances(balRes.data.data?.balances || []);
+      setCurrentUserId(userRes.data.data._id);
     } catch (err: any) {
       console.error("Failed to fetch group details", err);
     } finally {
       setLoading(false);
     }
   }, [id]);
+
+  const handleDeleteExpense = (expenseId: string) => {
+    Alert.alert(
+      "Delete Expense",
+      "Are you sure you want to delete this expense?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/expenses/${expenseId}`);
+              fetchGroupData();
+            } catch (err: any) {
+              console.error("Failed to delete expense", err);
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to delete expense",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -85,22 +115,43 @@ export default function GroupDetailsScreen() {
     </TouchableOpacity>
   );
 
-  const renderExpenseItem = ({ item }: { item: any }) => (
-    <Card style={styles.itemCard}>
-      <View style={styles.expenseHeader}>
-        <View style={styles.expenseIcon}>
-          <FontAwesome5 name="receipt" size={16} color={colors.primary} />
-        </View>
-        <View style={styles.expenseInfo}>
-          <Text style={styles.expenseDesc}>{item.description}</Text>
-          <Text style={styles.expenseMeta}>
-            Paid by {item.paidBy?.name || "Someone"}
-          </Text>
-        </View>
-        <Text style={styles.expenseAmount}>${item.amount.toFixed(2)}</Text>
-      </View>
-    </Card>
-  );
+  const renderExpenseItem = ({ item }: { item: any }) => {
+    const isPayer =
+      item.paidBy?._id === currentUserId || item.paidBy === currentUserId;
+
+    return (
+      <Card style={[styles.itemCard, { padding: 0 }]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onLongPress={() => {
+            if (isPayer) {
+              handleDeleteExpense(item._id);
+            }
+          }}
+          disabled={!isPayer}
+          delayLongPress={500}
+          style={{ padding: 16 }}
+        >
+          <View style={styles.expenseHeader}>
+            <View style={styles.expenseIcon}>
+              <FontAwesome5 name="receipt" size={16} color={colors.primary} />
+            </View>
+            <View style={styles.expenseInfo}>
+              <Text style={styles.expenseDesc}>{item.description}</Text>
+              <Text style={styles.expenseMeta}>
+                Paid by {item.paidBy?.name || "Someone"}
+              </Text>
+            </View>
+            <View style={{ alignItems: "flex-end", justifyContent: "center" }}>
+              <Text style={styles.expenseAmount}>
+                ${item.amount.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Card>
+    );
+  };
 
   const renderBalanceItem = ({ item }: { item: any }) => {
     const balance = item.netBalance || 0;

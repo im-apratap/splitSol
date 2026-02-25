@@ -13,6 +13,7 @@ import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
+import { connectWallet } from "../../src/utils/solana";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -48,6 +49,17 @@ export default function RegisterScreen() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      const key = await connectWallet();
+      setPubKey(key);
+    } catch (err: any) {
+      if (err?.message !== "User canceled request") {
+        setError(err.message || "Failed to connect wallet.");
+      }
     }
   };
 
@@ -98,13 +110,32 @@ export default function RegisterScreen() {
               secureTextEntry
             />
 
-            <Input
-              label="Solana Public Key"
-              placeholder="Enter your wallet address"
-              value={pubKey}
-              onChangeText={setPubKey}
-              autoCapitalize="none"
-            />
+            <View style={styles.walletSection}>
+              <Text style={styles.walletLabel}>Solana Public Key</Text>
+              {pubKey ? (
+                <View style={styles.connectedWallet}>
+                  <Text
+                    style={styles.pubKeyText}
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                  >
+                    {pubKey}
+                  </Text>
+                  <Button
+                    title="Change"
+                    onPress={handleConnectWallet}
+                    variant="outline"
+                  />
+                </View>
+              ) : (
+                <Button
+                  title="Connect Phantom/Solflare"
+                  onPress={handleConnectWallet}
+                  variant="outline"
+                  style={styles.connectWalletBtn}
+                />
+              )}
+            </View>
 
             <Button
               title="Create Account"
@@ -175,5 +206,33 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: "700",
+  },
+  walletSection: {
+    marginBottom: 16,
+  },
+  walletLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  connectedWallet: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surfaceLight,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pubKeyText: {
+    flex: 1,
+    color: colors.primary,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    marginRight: 12,
+  },
+  connectWalletBtn: {
+    marginTop: 4,
   },
 });
