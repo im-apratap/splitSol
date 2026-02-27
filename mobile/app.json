@@ -1,5 +1,10 @@
 {
   "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "8da8bf68-80df-4f01-90a6-160cb3c20c02"
+      }
+    },
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",

@@ -123,12 +123,12 @@ export default function GroupDetailsScreen() {
       <Card style={[styles.itemCard, { padding: 0 }]}>
         <TouchableOpacity
           activeOpacity={0.7}
+          onPress={() => router.push(`/expense/${item._id}` as any)}
           onLongPress={() => {
             if (isPayer) {
               handleDeleteExpense(item._id);
             }
           }}
-          disabled={!isPayer}
           delayLongPress={500}
           style={{ padding: 16 }}
         >
@@ -142,10 +142,23 @@ export default function GroupDetailsScreen() {
                 Paid by {item.paidBy?.name || "Someone"}
               </Text>
             </View>
-            <View style={{ alignItems: "flex-end", justifyContent: "center" }}>
+            <View
+              style={{
+                alignItems: "flex-end",
+                justifyContent: "center",
+                flexDirection: "row",
+                gap: 12,
+              }}
+            >
               <Text style={styles.expenseAmount}>
                 ${item.amount.toFixed(2)}
               </Text>
+              <FontAwesome5
+                name="chevron-right"
+                size={12}
+                color={colors.textMuted}
+                style={{ marginTop: 4 }}
+              />
             </View>
           </View>
         </TouchableOpacity>

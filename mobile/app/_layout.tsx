@@ -3,9 +3,15 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, ActivityIndicator, Platform } from "react-native";
 import { colors } from "../src/theme/colors";
+import {
+  registerForPushNotificationsAsync,
+  sendPushTokenToBackend,
+} from "../src/utils/notifications";
+import { usePushNotifications } from "../src/hooks/usePushNotifications";
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  usePushNotifications();
 
   useEffect(() => {
     checkToken();
@@ -20,6 +26,12 @@ export default function RootLayout() {
       const token = await AsyncStorage.getItem("accessToken");
       if (token) {
         setIsAuthenticated(true);
+        // User already logged in, update push token in background
+        if (Platform.OS === "android" || Platform.OS === "ios") {
+          registerForPushNotificationsAsync().then((pushToken) => {
+            if (pushToken) sendPushTokenToBackend(pushToken);
+          });
+        }
       } else {
         setIsAuthenticated(false);
       }

@@ -12,8 +12,12 @@ import { Container } from "../../src/components/Container";
 import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
-import { apiClient } from "../../src/api/client";
+import { apiClient, setTokens } from "../../src/api/client";
 import { connectWallet } from "../../src/utils/solana";
+import {
+  registerForPushNotificationsAsync,
+  sendPushTokenToBackend,
+} from "../../src/utils/notifications";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -34,7 +38,7 @@ export default function RegisterScreen() {
     setError("");
 
     try {
-      await apiClient.post("/users/register", {
+      const response = await apiClient.post("/users/register", {
         name,
         email,
         username,
@@ -42,7 +46,17 @@ export default function RegisterScreen() {
         pubKey,
       });
 
-      router.replace("/(auth)/login");
+      // The register endpoint returns accessToken/refreshToken
+      const { accessToken, refreshToken } = response.data.data;
+      await setTokens(accessToken, refreshToken);
+
+      // Register push token
+      const pushToken = await registerForPushNotificationsAsync();
+      if (pushToken) {
+        await sendPushTokenToBackend(pushToken);
+      }
+
+      router.replace("/(tabs)/home");
     } catch (err: any) {
       setError(
         err.response?.data?.message || err.message || "Failed to register",

@@ -28,6 +28,9 @@ const HistorySchema = mongoose.Schema(
     description: {
       type: String,
     },
+    txSignature: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

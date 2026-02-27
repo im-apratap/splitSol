@@ -106,7 +106,7 @@ export default function AddMemberScreen() {
             <Text style={styles.loadingText}>Loading friends...</Text>
           ) : friends.length === 0 ? (
             <Text style={styles.emptyText}>
-              You haven't added any friends yet.
+              You have not added any friends yet.
             </Text>
           ) : (
             friends.map((friend) => (

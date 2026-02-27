@@ -42,7 +42,7 @@ export default function ProfileScreen() {
       setCheckingBalance(true);
       const balanceRes = await apiClient.get("/settlements/balance");
       setBalance(`${balanceRes.data.data.balance.toFixed(4)} SOL`);
-    } catch (e) {
+    } catch {
       setBalance("Failed to load");
       Alert.alert("Error", "Could not fetch balance from Solana network.");
     } finally {

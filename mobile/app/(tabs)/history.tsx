@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../src/theme/colors";
@@ -14,6 +15,7 @@ import { apiClient } from "../../src/api/client";
 import { Container } from "../../src/components/Container";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
+import { openSolscanTx } from "../../src/utils/solana";
 
 type Group = {
   _id: string;
@@ -26,12 +28,14 @@ type HistoryLog = {
   description: string;
   group?: Group;
   createdAt: string;
+  txSignature?: string;
 };
 
 export default function HistoryScreen() {
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState("ALL");
 
   const fetchHistory = async () => {
     try {
@@ -114,13 +118,14 @@ export default function HistoryScreen() {
   const formatTime = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
 
   const renderHistoryItem = ({ item }: { item: HistoryLog }) => {
     const { icon, color, iconFamily } = getActionDetails(item.actionType);
+    const isSettlement = item.actionType.includes("SETTLEMENT");
 
     return (
       <View style={styles.card}>
@@ -137,10 +142,33 @@ export default function HistoryScreen() {
             )}
             <Text style={styles.time}>{formatTime(item.createdAt)}</Text>
           </View>
+          {isSettlement && item.txSignature && (
+            <TouchableOpacity
+              style={styles.solscanLink}
+              onPress={() => openSolscanTx(item.txSignature!)}
+            >
+              <FontAwesome5 name="external-link-alt" size={12} color={colors.secondary} />
+              <Text style={styles.solscanLinkText}>View on Solscan</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
   };
+
+  const filters = ["ALL", "EXPENSES", "SETTLEMENTS", "GROUPS", "FRIENDS"];
+
+  const filteredHistory = history.filter((item) => {
+    if (filter === "ALL") return true;
+    if (filter === "EXPENSES") return item.actionType.includes("EXPENSE");
+    if (filter === "SETTLEMENTS") return item.actionType.includes("SETTLEMENT");
+    if (filter === "GROUPS") return item.actionType.includes("GROUP");
+    if (filter === "FRIENDS")
+      return (
+        item.actionType.includes("FRIEND") || item.actionType.includes("MEMBER")
+      );
+    return true;
+  });
 
   if (loading) {
     return (
@@ -157,8 +185,38 @@ export default function HistoryScreen() {
           <Text style={styles.title}>History</Text>
         </View>
 
+        <View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContainer}
+          >
+            {filters.map((f) => (
+              <TouchableOpacity
+                key={f}
+                style={[
+                  styles.filterChip,
+                  filter === f && styles.filterChipActive,
+                ]}
+                onPress={() => setFilter(f)}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    filter === f && styles.filterTextActive,
+                  ]}
+                >
+                  {f === "ALL"
+                    ? "All Activity"
+                    : f.charAt(0) + f.slice(1).toLowerCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         <FlatList
-          data={history}
+          data={filteredHistory}
           keyExtractor={(item) => item._id}
           renderItem={renderHistoryItem}
           contentContainerStyle={styles.listContainer}
@@ -205,6 +263,31 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: colors.text,
+  },
+  filterContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  filterTextActive: {
+    color: "#FFF",
   },
   listContainer: {
     flexGrow: 1,
@@ -271,5 +354,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 16,
     fontSize: 16,
+  },
+  solscanLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  solscanLinkText: {
+    color: colors.secondary,
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 6,
   },
 });

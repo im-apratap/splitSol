@@ -2,10 +2,11 @@ import { Expense } from "../models/expense.model.js";
 import { Group } from "../models/group.model.js";
 import { Settlement } from "../models/settlement.model.js";
 import { History } from "../models/history.model.js";
-import { Group } from "../models/group.model.js";
-import { Settlement } from "../models/settlement.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { Expo } from "expo-server-sdk";
+import { sendPushNotifications } from "../utils/notifications.js";
 
 export const addExpense = async (req, res, next) => {
   try {
@@ -68,6 +69,47 @@ export const addExpense = async (req, res, next) => {
       group: groupId,
       description: `You added expense "${description}" of ${amount} to "${group.name}"`,
     });
+
+    // Send push notifications to all users involved
+    const messages = [];
+    const pushTitle = `New Expense in ${group.name}`;
+    const pushBody = `${req.user.name} added "${description}" for $${amount}`;
+
+    let usersToNotify = [];
+    if (splitType === "equal") {
+      usersToNotify = group.members.filter(
+        (m) => m.toString() !== req.user._id.toString(),
+      );
+    } else if (splitType === "custom" || splitType === "percentage") {
+      usersToNotify = shares
+        .map((s) => s.user)
+        .filter((id) => id.toString() !== req.user._id.toString());
+    }
+
+    if (usersToNotify.length > 0) {
+      const users = await User.find({ _id: { $in: usersToNotify } });
+      for (const user of users) {
+        if (user.expoPushToken && Expo.isExpoPushToken(user.expoPushToken)) {
+          messages.push({
+            to: user.expoPushToken,
+            sound: "default",
+            title: pushTitle,
+            body: pushBody,
+            data: {
+              groupId: group._id.toString(),
+              expenseId: expense._id.toString(),
+            },
+          });
+        }
+      }
+
+      if (messages.length > 0) {
+        // Fire and forget, don't await to block the res
+        sendPushNotifications(messages).catch((err) =>
+          console.error("Notification Error:", err),
+        );
+      }
+    }
 
     return res
       .status(201)
@@ -293,6 +335,113 @@ export const deleteExpense = async (req, res, next) => {
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Expense deleted successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getExpense = async (req, res, next) => {
+  try {
+    const { expenseId } = req.params;
+
+    const expense = await Expense.findById(expenseId)
+      .populate("paidBy", "name username pubKey")
+      .populate("splitAmong", "name username pubKey")
+      .populate("shares.user", "name username pubKey");
+
+    if (!expense) {
+      throw new ApiError(404, "Expense not found");
+    }
+
+    const group = await Group.findById(expense.groupId);
+    if (!group) {
+      throw new ApiError(404, "Group not found");
+    }
+
+    const isMember = group.members.some(
+      (m) => m.toString() === req.user._id.toString(),
+    );
+    if (!isMember) {
+      throw new ApiError(403, "You are not a member of this group");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, expense, "Expense fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateExpense = async (req, res, next) => {
+  try {
+    const { expenseId } = req.params;
+    const { description, amount, splitType, splitAmong, shares } = req.body;
+
+    const expense = await Expense.findById(expenseId);
+    if (!expense) {
+      throw new ApiError(404, "Expense not found");
+    }
+
+    const group = await Group.findById(expense.groupId);
+    if (!group) {
+      throw new ApiError(404, "Group not found");
+    }
+
+    // Any member can edit
+    const isMember = group.members.some(
+      (m) => m.toString() === req.user._id.toString(),
+    );
+    if (!isMember) {
+      throw new ApiError(403, "You are not a member of this group");
+    }
+
+    if (amount) {
+      if (splitType === "custom" && shares) {
+        const totalShares = shares.reduce((sum, s) => sum + s.amount, 0);
+        if (Math.abs(totalShares - amount) > 0.01) {
+          throw new ApiError(
+            400,
+            "Custom shares must add up to the total amount",
+          );
+        }
+      }
+      if (splitType === "percentage" && shares) {
+        const totalPercentage = shares.reduce((sum, s) => sum + s.amount, 0);
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+          throw new ApiError(400, "Percentage shares must add up to 100");
+        }
+      }
+    }
+
+    const updateData = {};
+    if (description) updateData.description = description;
+    if (amount) updateData.amount = amount;
+    if (splitType) updateData.splitType = splitType;
+    if (splitAmong) updateData.splitAmong = splitAmong;
+    if (shares) updateData.shares = shares;
+
+    const updatedExpense = await Expense.findByIdAndUpdate(
+      expenseId,
+      updateData,
+      { new: true },
+    )
+      .populate("paidBy", "name username pubKey")
+      .populate("splitAmong", "name username pubKey")
+      .populate("shares.user", "name username pubKey");
+
+    await History.create({
+      user: req.user._id,
+      actionType: "EXPENSE_ADDED", // Log edit event generically or reuse ADDED for display since no UPDATED enum exists
+      group: group._id,
+      description: `You edited expense "${updatedExpense.description}" (${updatedExpense.amount}) in "${group.name}"`,
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedExpense, "Expense updated successfully"),
+      );
   } catch (error) {
     next(error);
   }

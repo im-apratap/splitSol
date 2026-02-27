@@ -13,6 +13,10 @@ import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient, setTokens } from "../../src/api/client";
+import {
+  registerForPushNotificationsAsync,
+  sendPushTokenToBackend,
+} from "../../src/utils/notifications";
 
 export default function LoginScreen() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -41,6 +45,12 @@ export default function LoginScreen() {
 
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
+
+      // Register push token
+      const pushToken = await registerForPushNotificationsAsync();
+      if (pushToken) {
+        await sendPushTokenToBackend(pushToken);
+      }
 
       // Navigate to tabs
       router.replace("/(tabs)/home");

@@ -79,7 +79,7 @@ export default function AddFriendScreen() {
             />
 
             <Text style={styles.description}>
-              Enter your friend's exact username to send them a friend request.
+              Enter your friend&apos;s exact username to send them a friend request.
               They will need to accept it before they appear in your friends
               list.
             </Text>

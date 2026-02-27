@@ -189,7 +189,7 @@ export default function FriendsScreen() {
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
               <Text style={styles.emptyText}>
-                You haven't added any friends yet.
+                You have not added any friends yet.
               </Text>
             }
           />

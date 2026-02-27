@@ -1,14 +1,14 @@
 import "react-native-get-random-values";
 import { Buffer } from "buffer";
-// Global polyfills for Solana Web3.js
-if (typeof global.Buffer === "undefined") {
-  global.Buffer = Buffer;
-}
-
 import { Tabs } from "expo-router";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { colors } from "../../src/theme/colors";
 import { Platform } from "react-native";
+
+// Global polyfills for Solana Web3.js
+if (typeof global.Buffer === "undefined") {
+  global.Buffer = Buffer;
+}
 
 export default function TabLayout() {
   return (

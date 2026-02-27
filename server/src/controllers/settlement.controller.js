@@ -2,8 +2,7 @@ import { Expense } from "../models/expense.model.js";
 import { Group } from "../models/group.model.js";
 import { Settlement } from "../models/settlement.model.js";
 import { History } from "../models/history.model.js";
-import { Group } from "../models/group.model.js";
-import { Settlement } from "../models/settlement.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
@@ -14,6 +13,8 @@ import {
   connection,
   getSolPriceInUSD,
 } from "../utils/solana.js";
+import { Expo } from "expo-server-sdk";
+import { sendPushNotifications } from "../utils/notifications.js";
 
 // Calculate net balances for a group (reused from expense controller logic).
 const calculateNetBalances = async (groupId) => {
@@ -320,12 +321,14 @@ export const confirmSettlement = async (req, res, next) => {
         actionType: "SETTLEMENT_CONFIRMED",
         group: s.groupId ? s.groupId._id : null,
         description: `You settled ${s.amount} SOL with ${s.to.name}`,
+        txSignature,
       });
       await History.create({
         user: s.to._id,
         actionType: "SETTLEMENT_CONFIRMED",
         group: s.groupId ? s.groupId._id : null,
         description: `${s.from.name} settled ${s.amount} SOL with you`,
+        txSignature,
       });
     }
 
@@ -404,13 +407,39 @@ export const submitSignedTransaction = async (req, res, next) => {
         actionType: "SETTLEMENT_CONFIRMED",
         group: s.groupId ? s.groupId._id : null,
         description: `You settled ${s.amount} SOL with ${s.to.name}`,
+        txSignature,
       });
       await History.create({
         user: s.to._id,
         actionType: "SETTLEMENT_CONFIRMED",
         group: s.groupId ? s.groupId._id : null,
         description: `${s.from.name} settled ${s.amount} SOL with you`,
+        txSignature,
       });
+    }
+
+    // Attempt to notify the receivers via Expo Push
+    const messages = [];
+    for (const s of updatedSettlements) {
+      // Find the receiver's full user doc to get their token
+      const receiver = await User.findById(s.to._id);
+      if (
+        receiver &&
+        receiver.expoPushToken &&
+        Expo.isExpoPushToken(receiver.expoPushToken)
+      ) {
+        messages.push({
+          to: receiver.expoPushToken,
+          sound: "default",
+          title: "Payment Received",
+          body: `${s.from.name} just paid you ${s.amount} SOL! 💸`,
+          data: { groupId: s.groupId ? s.groupId._id.toString() : null },
+        });
+      }
+    }
+
+    if (messages.length > 0) {
+      sendPushNotifications(messages).catch(console.error);
     }
 
     return res
