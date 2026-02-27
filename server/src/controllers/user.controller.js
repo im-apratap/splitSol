@@ -226,3 +226,24 @@ export const updatePubKey = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updatePushToken = async (req, res, next) => {
+  try {
+    const { expoPushToken } = req.body;
+
+    // We allow clearing the token by passing an empty string or null, so we don't strictly require it
+    // if (!expoPushToken) throw new ApiError(400, "expoPushToken is required");
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { expoPushToken },
+      { new: true },
+    ).select("-password -refreshToken");
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "Push token updated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};

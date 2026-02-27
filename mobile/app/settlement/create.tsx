@@ -5,6 +5,8 @@ import {
   Text,
   ScrollView,
   ActivityIndicator,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Container } from "../../src/components/Container";
@@ -14,7 +16,7 @@ import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { signTransactionOnDevice } from "../../src/utils/solana";
+import { signTransactionOnDevice, openSolscanTx } from "../../src/utils/solana";
 
 export default function CreateSettlementScreen() {
   const { groupId } = useLocalSearchParams();
@@ -23,9 +25,11 @@ export default function CreateSettlementScreen() {
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [error, setError] = useState("");
-  const [balances, setBalances] = useState<any[]>([]);
   const [settlements, setSettlements] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [successModal, setSuccessModal] = useState(false);
+  const [txSignature, setTxSignature] = useState<string | null>(null);
+  const [settledAmount, setSettledAmount] = useState<string>("");
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -43,7 +47,6 @@ export default function CreateSettlementScreen() {
 
       // Fetch group balances to know who the user owes
       const balanceRes = await apiClient.get(`/expenses/balances/${groupId}`);
-      setBalances(balanceRes.data.data.balances);
       setSettlements(balanceRes.data.data.settlements);
 
       if (otherMembers.length > 0) {
@@ -116,12 +119,16 @@ export default function CreateSettlementScreen() {
       );
 
       // Submit the signed transaction back
-      await apiClient.post("/settlements/submit", {
+      const submitRes = await apiClient.post("/settlements/submit", {
         settlementIds: settlements.map((s: any) => s.settlementId),
         signedTransaction,
       });
 
-      router.back();
+      // Show success modal with Solscan link
+      const signature = submitRes.data.data.txSignature;
+      setTxSignature(signature);
+      setSettledAmount(amount);
+      setSuccessModal(true);
     } catch (err: any) {
       setError(
         err.response?.data?.message || err.message || "Failed to settle",
@@ -131,8 +138,63 @@ export default function CreateSettlementScreen() {
     }
   };
 
+  const handleViewOnSolscan = () => {
+    if (txSignature) {
+      openSolscanTx(txSignature);
+    }
+  };
+
+  const handleCloseSuccess = () => {
+    setSuccessModal(false);
+    router.back();
+  };
+
   return (
     <Container>
+      {/* Success Modal */}
+      <Modal
+        visible={successModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseSuccess}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.successIconContainer}>
+              <FontAwesome5 name="check-circle" size={64} color={colors.success} />
+            </View>
+            <Text style={styles.successTitle}>Payment Sent!</Text>
+            <Text style={styles.successSubtitle}>
+              Successfully settled ${settledAmount} on Solana
+            </Text>
+            
+            {txSignature && (
+              <View style={styles.txInfoContainer}>
+                <Text style={styles.txLabel}>Transaction Signature</Text>
+                <Text style={styles.txSignature} numberOfLines={1} ellipsizeMode="middle">
+                  {txSignature}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.solscanButton}
+              onPress={handleViewOnSolscan}
+            >
+              <FontAwesome5 name="external-link-alt" size={16} color="#FFF" />
+              <Text style={styles.solscanButtonText}>View on Solscan</Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Done"
+              onPress={handleCloseSuccess}
+              variant="outline"
+              style={styles.doneButton}
+            />
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Settle Up</Text>
@@ -278,5 +340,80 @@ const styles = StyleSheet.create({
     height: 56,
     width: "100%",
     color: colors.text,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 32,
+    width: "100%",
+    maxWidth: 340,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  txInfoContainer: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    padding: 16,
+    width: "100%",
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  txLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  txSignature: {
+    fontSize: 14,
+    color: colors.primary,
+    fontFamily: "monospace",
+  },
+  solscanButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.secondary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    width: "100%",
+    marginBottom: 12,
+  },
+  solscanButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 10,
+  },
+  doneButton: {
+    width: "100%",
   },
 });

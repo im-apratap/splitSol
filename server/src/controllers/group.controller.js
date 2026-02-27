@@ -1,5 +1,7 @@
 import { Group } from "../models/group.model.js";
 import { User } from "../models/user.model.js";
+import { History } from "../models/history.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -20,6 +22,13 @@ export const createGroup = async (req, res, next) => {
     const populatedGroup = await Group.findById(group._id)
       .populate("members", "name username pubKey")
       .populate("createdBy", "name username");
+
+    await History.create({
+      user: req.user._id,
+      actionType: "GROUP_CREATED",
+      group: group._id,
+      description: `You created group "${name}"`,
+    });
 
     return res
       .status(201)
@@ -107,6 +116,13 @@ export const addMember = async (req, res, next) => {
       .populate("members", "name username pubKey")
       .populate("createdBy", "name username");
 
+    await History.create({
+      user: req.user._id,
+      actionType: "MEMBER_ADDED",
+      group: groupId,
+      description: `You added ${userToAdd.name} to "${group.name}"`,
+    });
+
     return res
       .status(200)
       .json(new ApiResponse(200, updatedGroup, "Member added successfully"));
@@ -140,6 +156,17 @@ export const removeMember = async (req, res, next) => {
     const updatedGroup = await Group.findById(groupId)
       .populate("members", "name username pubKey")
       .populate("createdBy", "name username");
+
+    // We can look up the user to get their name for a better history message
+    const removedUser = await User.findById(userId);
+    const removedUserName = removedUser ? removedUser.name : "a member";
+
+    await History.create({
+      user: req.user._id,
+      actionType: "MEMBER_REMOVED",
+      group: groupId,
+      description: `You removed ${removedUserName} from "${group.name}"`,
+    });
 
     return res
       .status(200)

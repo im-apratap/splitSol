@@ -1,11 +1,11 @@
 import { transact } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import {
   Connection,
-  PublicKey,
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Buffer } from "buffer";
+import * as Linking from "expo-linking";
 
 // Ensure Buffer is available globally for web3.js
 if (typeof global.Buffer === "undefined") {
@@ -19,10 +19,37 @@ export const APP_IDENTITY = {
 };
 
 // DEVNET endpoint
+export const SOLANA_CLUSTER = "devnet";
 export const connection = new Connection(
   "https://api.devnet.solana.com",
   "confirmed",
 );
+
+/**
+ * Generates a Solscan URL for a transaction signature.
+ * @param txSignature - The transaction signature
+ * @param cluster - The Solana cluster (defaults to devnet)
+ * @returns The Solscan URL
+ */
+export function getSolscanUrl(
+  txSignature: string,
+  cluster: string = SOLANA_CLUSTER,
+): string {
+  const baseUrl = "https://solscan.io/tx";
+  if (cluster === "mainnet-beta" || cluster === "mainnet") {
+    return `${baseUrl}/${txSignature}`;
+  }
+  return `${baseUrl}/${txSignature}?cluster=${cluster}`;
+}
+
+/**
+ * Opens the Solscan page for a transaction in the device's browser.
+ * @param txSignature - The transaction signature
+ */
+export async function openSolscanTx(txSignature: string): Promise<void> {
+  const url = getSolscanUrl(txSignature);
+  await Linking.openURL(url);
+}
 
 /**
  * Prompts the user to connect their Solana Mobile Wallet (e.g. Phantom, Solflare).
@@ -54,7 +81,7 @@ export async function signTransactionOnDevice(
 ): Promise<string> {
   return await transact(async (wallet) => {
     // 1. Authorize session
-    const authResult = await wallet.authorize({
+    await wallet.authorize({
       cluster: "devnet",
       identity: APP_IDENTITY,
     });
@@ -68,7 +95,7 @@ export async function signTransactionOnDevice(
     let transaction;
     try {
       transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
-    } catch (e) {
+    } catch {
       transaction = Transaction.from(new Uint8Array(txBuffer));
     }
 
