@@ -159,7 +159,7 @@ export default function CreateExpenseScreen() {
       // No strict permissions required for basic gallery read in modern Expo versions,
       // but launching it handles the prompt OS-side if needed.
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 1,
       });

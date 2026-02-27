@@ -1,6 +1,9 @@
 import { Expense } from "../models/expense.model.js";
 import { Group } from "../models/group.model.js";
 import { Settlement } from "../models/settlement.model.js";
+import { History } from "../models/history.model.js";
+import { Group } from "../models/group.model.js";
+import { Settlement } from "../models/settlement.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
@@ -307,7 +310,24 @@ export const confirmSettlement = async (req, res, next) => {
       _id: { $in: settlementIds },
     })
       .populate("from", "name username pubKey")
-      .populate("to", "name username pubKey");
+      .populate("to", "name username pubKey")
+      .populate("groupId", "name");
+
+    // Log history for each confirmed settlement
+    for (const s of updatedSettlements) {
+      await History.create({
+        user: s.from._id,
+        actionType: "SETTLEMENT_CONFIRMED",
+        group: s.groupId ? s.groupId._id : null,
+        description: `You settled ${s.amount} SOL with ${s.to.name}`,
+      });
+      await History.create({
+        user: s.to._id,
+        actionType: "SETTLEMENT_CONFIRMED",
+        group: s.groupId ? s.groupId._id : null,
+        description: `${s.from.name} settled ${s.amount} SOL with you`,
+      });
+    }
 
     return res
       .status(200)
@@ -374,7 +394,24 @@ export const submitSignedTransaction = async (req, res, next) => {
       _id: { $in: settlementIds },
     })
       .populate("from", "name username pubKey")
-      .populate("to", "name username pubKey");
+      .populate("to", "name username pubKey")
+      .populate("groupId", "name");
+
+    // Log history for each confirmed settlement
+    for (const s of updatedSettlements) {
+      await History.create({
+        user: s.from._id,
+        actionType: "SETTLEMENT_CONFIRMED",
+        group: s.groupId ? s.groupId._id : null,
+        description: `You settled ${s.amount} SOL with ${s.to.name}`,
+      });
+      await History.create({
+        user: s.to._id,
+        actionType: "SETTLEMENT_CONFIRMED",
+        group: s.groupId ? s.groupId._id : null,
+        description: `${s.from.name} settled ${s.amount} SOL with you`,
+      });
+    }
 
     return res
       .status(200)

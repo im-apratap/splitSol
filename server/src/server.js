@@ -11,6 +11,7 @@ import expenseRoutes from "./routes/expense.routes.js";
 import settlementRoutes from "./routes/settlement.routes.js";
 import billRoutes from "./routes/bill.routes.js";
 import friendRoutes from "./routes/friend.route.js";
+import historyRoutes from "./routes/history.route.js";
 
 const app = express();
 
@@ -34,20 +35,21 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/bill", billRoutes);
 app.use("/api/friends", friendRoutes);
+app.use("/api/history", historyRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    connectDB();
+    await connectDB();
     if (ENV.NODE_ENV !== "production") {
       app.listen(ENV.PORT, () => {
         console.log(`Server running on PORT ${ENV.PORT}`);
       });
     }
   } catch (error) {
-    console.log("Error while starting the Server: ",error);
+    console.log("Error while starting the Server: ", error);
     process.exit(1);
   }
 };

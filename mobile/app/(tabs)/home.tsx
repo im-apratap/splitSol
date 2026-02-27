@@ -255,10 +255,8 @@ const styles = StyleSheet.create({
     right: 16,
   },
   floatingActionWrapper: {
-    position: "absolute",
-    bottom: 24,
-    left: 24,
-    right: 24,
+    paddingVertical: 16,
+    paddingTop: 8,
   },
   floatingAddBtn: {
     shadowColor: "#000",

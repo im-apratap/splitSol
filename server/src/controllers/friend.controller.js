@@ -1,5 +1,6 @@
 import { FriendRequest } from "../models/friendRequest.model.js";
 import { User } from "../models/user.model.js";
+import { History } from "../models/history.model.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -91,6 +92,22 @@ export const acceptFriendRequest = async (req, res) => {
     });
     await User.findByIdAndUpdate(receiverId, {
       $addToSet: { friends: request.sender },
+    });
+
+    const senderUser = await User.findById(request.sender);
+    const receiverUser = await User.findById(receiverId);
+
+    // Log history for both users
+    await History.create({
+      user: receiverId,
+      actionType: "FRIEND_ADDED",
+      description: `You are now friends with ${senderUser.name}`,
+    });
+
+    await History.create({
+      user: request.sender,
+      actionType: "FRIEND_ADDED",
+      description: `You are now friends with ${receiverUser.name}`,
     });
 
     res.status(200).json({ message: "Friend request accepted" });

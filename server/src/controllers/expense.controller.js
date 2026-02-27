@@ -1,6 +1,9 @@
 import { Expense } from "../models/expense.model.js";
 import { Group } from "../models/group.model.js";
 import { Settlement } from "../models/settlement.model.js";
+import { History } from "../models/history.model.js";
+import { Group } from "../models/group.model.js";
+import { Settlement } from "../models/settlement.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -58,6 +61,13 @@ export const addExpense = async (req, res, next) => {
       .populate("paidBy", "name username pubKey")
       .populate("splitAmong", "name username pubKey")
       .populate("shares.user", "name username pubKey");
+
+    await History.create({
+      user: req.user._id,
+      actionType: "EXPENSE_ADDED",
+      group: groupId,
+      description: `You added expense "${description}" of ${amount} to "${group.name}"`,
+    });
 
     return res
       .status(201)
@@ -272,6 +282,13 @@ export const deleteExpense = async (req, res, next) => {
     }
 
     await Expense.findByIdAndDelete(expenseId);
+
+    await History.create({
+      user: req.user._id,
+      actionType: "EXPENSE_DELETED",
+      group: group._id,
+      description: `You deleted expense "${expense.description}" of ${expense.amount} from "${group.name}"`,
+    });
 
     return res
       .status(200)
