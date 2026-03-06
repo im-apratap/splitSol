@@ -4,12 +4,9 @@ import { Tabs } from "expo-router";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { colors } from "../../src/theme/colors";
 import { Platform } from "react-native";
-
-// Global polyfills for Solana Web3.js
 if (typeof global.Buffer === "undefined") {
   global.Buffer = Buffer;
 }
-
 export default function TabLayout() {
   return (
     <Tabs
@@ -17,8 +14,8 @@ export default function TabLayout() {
         headerShown: true,
         headerStyle: {
           backgroundColor: colors.surface,
-          shadowColor: "transparent", // Remove shadow on iOS
-          elevation: 0, // Remove shadow on Android
+          shadowColor: "transparent", 
+          elevation: 0, 
         },
         headerTintColor: colors.text,
         headerTitleStyle: {

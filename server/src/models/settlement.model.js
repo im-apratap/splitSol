@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const settlementSchema = mongoose.Schema(
   {
     groupId: {
@@ -37,5 +36,4 @@ const settlementSchema = mongoose.Schema(
   },
   { timestamps: true },
 );
-
 export const Settlement = mongoose.model("Settlement", settlementSchema);

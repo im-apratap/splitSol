@@ -8,7 +8,6 @@ import {
   TextStyle,
 } from "react-native";
 import { colors } from "../theme/colors";
-
 interface ButtonProps {
   title: string;
   onPress: () => void;
@@ -18,7 +17,6 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
-
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
@@ -32,7 +30,6 @@ export const Button: React.FC<ButtonProps> = ({
   let borderColor = "transparent";
   let textColor = "#FFFFFF";
   let borderWidth = 0;
-
   if (variant === "secondary") {
     backgroundColor = colors.secondary;
     textColor = colors.background;
@@ -47,7 +44,6 @@ export const Button: React.FC<ButtonProps> = ({
     borderWidth = 1;
     textColor = colors.error;
   }
-
   return (
     <TouchableOpacity
       style={[
@@ -70,12 +66,11 @@ export const Button: React.FC<ButtonProps> = ({
     </TouchableOpacity>
   );
 };
-
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 18,
     paddingHorizontal: 32,
-    borderRadius: 999, // Pill shape
+    borderRadius: 999, 
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 10,

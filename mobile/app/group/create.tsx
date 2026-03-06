@@ -6,25 +6,20 @@ import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
-
 export default function CreateGroupScreen() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handleCreateGroup = async () => {
     if (!name.trim()) {
       setError("Group name is required");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const res = await apiClient.post("/groups", { name });
       const newGroup = res.data.data;
-
       router.replace(`/group/${newGroup._id}` as any);
     } catch (err: any) {
       setError(
@@ -34,7 +29,6 @@ export default function CreateGroupScreen() {
       setLoading(false);
     }
   };
-
   return (
     <Container>
       <ScrollView contentContainerStyle={styles.content}>
@@ -42,10 +36,8 @@ export default function CreateGroupScreen() {
           <Text style={styles.title}>New Group</Text>
           <Text style={styles.subtitle}>Create a group to share expenses</Text>
         </View>
-
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <Input
             label="Group Name"
             placeholder="e.g. Goa Trip, Apartment Rent"
@@ -53,14 +45,12 @@ export default function CreateGroupScreen() {
             onChangeText={setName}
             autoFocus
           />
-
           <Button
             title="Create Group"
             onPress={handleCreateGroup}
             loading={loading}
             style={styles.createButton}
           />
-
           <Button
             title="Cancel"
             onPress={() => router.back()}
@@ -72,7 +62,6 @@ export default function CreateGroupScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     padding: 24,

@@ -9,15 +9,12 @@ import {
 } from "../src/utils/notifications";
 import { usePushNotifications } from "../src/hooks/usePushNotifications";
 import { SolPriceProvider } from "../src/hooks/useSolPrice";
-
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   usePushNotifications();
-
   useEffect(() => {
     checkToken();
   }, []);
-
   const checkToken = async () => {
     try {
       if (Platform.OS === "web") {
@@ -27,7 +24,6 @@ export default function RootLayout() {
       const token = await AsyncStorage.getItem("accessToken");
       if (token) {
         setIsAuthenticated(true);
-        // User already logged in, update push token in background
         if (Platform.OS === "android" || Platform.OS === "ios") {
           registerForPushNotificationsAsync().then((pushToken) => {
             if (pushToken) sendPushTokenToBackend(pushToken);
@@ -40,7 +36,6 @@ export default function RootLayout() {
       setIsAuthenticated(false);
     }
   };
-
   useEffect(() => {
     if (isAuthenticated === true) {
       router.replace("/(tabs)/home");
@@ -48,7 +43,6 @@ export default function RootLayout() {
       router.replace("/(auth)/login");
     }
   }, [isAuthenticated]);
-
   if (isAuthenticated === null) {
     return (
       <View
@@ -63,7 +57,6 @@ export default function RootLayout() {
       </View>
     );
   }
-
   return (
     <SolPriceProvider>
       <Stack screenOptions={{ headerShown: false }}>

@@ -13,35 +13,26 @@ import { Button } from "../../../src/components/Button";
 import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../../src/theme/colors";
 import { apiClient } from "../../../src/api/client";
-
 export default function EditExpenseScreen() {
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [splitType, setSplitType] = useState("equal");
-
   const [members, setMembers] = useState<any[]>([]);
   const [shares, setShares] = useState<{ [key: string]: string }>({});
-
   const fetchExpenseDetails = useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiClient.get(`/expenses/${id}`);
       const expense = res.data.data;
-
       setDescription(expense.description);
       setAmount(expense.amount.toString());
       setSplitType(expense.splitType);
-
-      // We need to fetch the group members to show the split correctly
       const groupRes = await apiClient.get(`/groups/${expense.groupId}`);
       setMembers(groupRes.data.data.members || []);
-
-      // Pre-fill shares if custom or percentage
       if (expense.splitType !== "equal" && expense.shares) {
         const sharesMap: { [key: string]: string } = {};
         expense.shares.forEach((s: any) => {
@@ -55,38 +46,31 @@ export default function EditExpenseScreen() {
       setLoading(false);
     }
   }, [id]);
-
   useFocusEffect(
     useCallback(() => {
       if (id) fetchExpenseDetails();
     }, [id, fetchExpenseDetails]),
   );
-
   const handleShareChange = (userId: string, value: string) => {
     setShares((prev) => ({ ...prev, [userId]: value }));
   };
-
   const handleUpdateExpense = async () => {
     if (!description || !amount || isNaN(Number(amount))) {
       setError("Please provide a valid description and amount");
       return;
     }
-
     let sharesPayload: any[] = [];
     if (splitType === "custom" || splitType === "percentage") {
       sharesPayload = Object.entries(shares)
         .filter(([_, val]) => val !== "" && !isNaN(Number(val)))
         .map(([user, val]) => ({ user, amount: Number(val) }));
-
       if (sharesPayload.length === 0) {
         setError(`Please enter the ${splitType} amounts below`);
         return;
       }
     }
-
     setSaving(true);
     setError("");
-
     try {
       await apiClient.put(`/expenses/${id}`, {
         description,
@@ -103,7 +87,6 @@ export default function EditExpenseScreen() {
       setSaving(false);
     }
   };
-
   if (loading) {
     return (
       <Container style={styles.centerElement}>
@@ -111,7 +94,6 @@ export default function EditExpenseScreen() {
       </Container>
     );
   }
-
   return (
     <Container>
       <ScrollView contentContainerStyle={styles.content}>
@@ -119,17 +101,14 @@ export default function EditExpenseScreen() {
           <Text style={styles.title}>Edit Expense</Text>
           <Text style={styles.subtitle}>Modify your transaction</Text>
         </View>
-
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <Input
             label="Description"
             placeholder="Dinner, Taxi, Groceries..."
             value={description}
             onChangeText={setDescription}
           />
-
           <Input
             label="Amount (in USD)"
             placeholder="0.00"
@@ -137,7 +116,6 @@ export default function EditExpenseScreen() {
             onChangeText={setAmount}
             keyboardType="decimal-pad"
           />
-
           <View style={styles.pickerContainer}>
             <Text style={styles.pickerLabel}>Split Option</Text>
             <View style={styles.pickerWrapper}>
@@ -153,7 +131,6 @@ export default function EditExpenseScreen() {
               </Picker>
             </View>
           </View>
-
           {(splitType === "custom" || splitType === "percentage") &&
             members.length > 0 && (
               <View style={styles.sharesContainer}>
@@ -162,7 +139,6 @@ export default function EditExpenseScreen() {
                     ? "Enter Custom Amounts ($)"
                     : "Enter Percentages (%)"}
                 </Text>
-
                 {members.map((member) => (
                   <View key={member._id} style={styles.shareRow}>
                     <Text style={styles.shareName}>
@@ -180,14 +156,12 @@ export default function EditExpenseScreen() {
                 ))}
               </View>
             )}
-
           <Button
             title="Save Changes"
             onPress={handleUpdateExpense}
             loading={saving}
             style={styles.actionButton}
           />
-
           <Button
             title="Cancel"
             onPress={() => router.back()}
@@ -199,7 +173,6 @@ export default function EditExpenseScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: { padding: 24, paddingTop: 16 },
   centerElement: { alignItems: "center", justifyContent: "center" },

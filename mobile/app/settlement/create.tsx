@@ -18,7 +18,6 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { signTransactionOnDevice, openSolscanTx } from "../../src/utils/solana";
 import { useSolPrice } from "../../src/hooks/useSolPrice";
-
 export default function CreateSettlementScreen() {
   const { groupId } = useLocalSearchParams();
   const [toUserId, setToUserId] = useState("");
@@ -34,25 +33,18 @@ export default function CreateSettlementScreen() {
   const [settledSolAmount, setSettledSolAmount] = useState<string>("");
   const [settledRate, setSettledRate] = useState<string>("");
   const { solPrice } = useSolPrice();
-
   const fetchData = React.useCallback(async () => {
     try {
-      // Fetch current User profile
       const userRes = await apiClient.get("/users/me");
       const loggedInUserId = userRes.data.data._id;
       setCurrentUserId(loggedInUserId);
-
-      // Fetch group members
       const res = await apiClient.get(`/groups/${groupId}`);
       const otherMembers = res.data.data.members.filter(
         (m: any) => m._id !== loggedInUserId,
       );
       setMembers(otherMembers);
-
-      // Fetch group balances to know who the user owes
       const balanceRes = await apiClient.get(`/expenses/balances/${groupId}`);
       setSettlements(balanceRes.data.data.settlements);
-
       if (otherMembers.length > 0) {
         setToUserId(otherMembers[0]._id);
       }
@@ -61,13 +53,11 @@ export default function CreateSettlementScreen() {
       setError("Failed to fetch group data");
     }
   }, [groupId]);
-
   useEffect(() => {
     if (groupId) {
       fetchData();
     }
   }, [groupId, fetchData]);
-
   const handleCheckAmount = () => {
     if (toUserId && settlements.length > 0 && currentUserId) {
       const oweThem = settlements.find(
@@ -76,10 +66,9 @@ export default function CreateSettlementScreen() {
       const theyOwe = settlements.find(
         (s) => s.from._id === toUserId && s.to._id === currentUserId,
       );
-
       if (oweThem) {
         setAmount(oweThem.amount.toString());
-        setError(""); // Clear error
+        setError(""); 
       } else if (theyOwe) {
         setAmount("0");
         setError(
@@ -94,41 +83,30 @@ export default function CreateSettlementScreen() {
       setError("No balances found or you don't owe anyone.");
     }
   };
-
   const handleSettle = async () => {
     if (!toUserId || !amount || isNaN(Number(amount))) {
       setError("Please select a user and valid amount");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const res = await apiClient.post("/settlements/create", {
         groupId,
         toUserId,
         amount: Number(amount),
       });
-
       const { serializedTransaction, settlements } = res.data.data;
-
       if (!serializedTransaction) {
         throw new Error("No transaction object received from server");
       }
-
-      // Prompt user to sign the transaction via Phantom/Solflare
       const signedTransaction = await signTransactionOnDevice(
         serializedTransaction,
       );
-
-      // Submit the signed transaction back
       const submitRes = await apiClient.post("/settlements/submit", {
         settlementIds: settlements.map((s: any) => s.settlementId),
         signedTransaction,
       });
-
-      // Show success modal with Solscan link
       const signature = submitRes.data.data.txSignature;
       setTxSignature(signature);
       setSettledAmount(amount);
@@ -146,21 +124,18 @@ export default function CreateSettlementScreen() {
       setLoading(false);
     }
   };
-
   const handleViewOnSolscan = () => {
     if (txSignature) {
       openSolscanTx(txSignature);
     }
   };
-
   const handleCloseSuccess = () => {
     setSuccessModal(false);
     router.back();
   };
-
   return (
     <Container>
-      {/* Success Modal */}
+      {}
       <Modal
         visible={successModal}
         transparent
@@ -180,7 +155,6 @@ export default function CreateSettlementScreen() {
             <Text style={styles.successSubtitle}>
               Successfully settled ${settledAmount} on Solana
             </Text>
-
             {settledSolAmount !== "" && (
               <View style={styles.solAmountBadge}>
                 <FontAwesome5 name="coins" size={14} color={colors.secondary} />
@@ -190,7 +164,6 @@ export default function CreateSettlementScreen() {
                 )}
               </View>
             )}
-
             {txSignature && (
               <View style={styles.txInfoContainer}>
                 <Text style={styles.txLabel}>Transaction Signature</Text>
@@ -203,7 +176,6 @@ export default function CreateSettlementScreen() {
                 </Text>
               </View>
             )}
-
             <TouchableOpacity
               style={styles.solscanButton}
               onPress={handleViewOnSolscan}
@@ -211,7 +183,6 @@ export default function CreateSettlementScreen() {
               <FontAwesome5 name="external-link-alt" size={16} color="#FFF" />
               <Text style={styles.solscanButtonText}>View on Solscan</Text>
             </TouchableOpacity>
-
             <Button
               title="Done"
               onPress={handleCloseSuccess}
@@ -221,7 +192,6 @@ export default function CreateSettlementScreen() {
           </View>
         </View>
       </Modal>
-
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Settle Up</Text>
@@ -229,15 +199,12 @@ export default function CreateSettlementScreen() {
             Pay your friends securely on Solana
           </Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.checkoutBanner}>
             <FontAwesome5 name="wallet" size={24} color={colors.secondary} />
             <Text style={styles.checkoutText}>Solana Devnet TX</Text>
           </View>
-
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           {members.length === 0 ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
@@ -261,14 +228,12 @@ export default function CreateSettlementScreen() {
               </View>
             </View>
           )}
-
           <Button
             title="Check Amount Owed"
             onPress={handleCheckAmount}
             variant="outline"
             style={styles.checkButton}
           />
-
           <Input
             label="Amount (in USD equivalent)"
             placeholder="0.00"
@@ -276,7 +241,6 @@ export default function CreateSettlementScreen() {
             onChangeText={setAmount}
             keyboardType="decimal-pad"
           />
-
           {amount !== "" &&
             !isNaN(Number(amount)) &&
             Number(amount) > 0 &&
@@ -293,14 +257,12 @@ export default function CreateSettlementScreen() {
                 </Text>
               </View>
             )}
-
           <Button
             title="Sign & Send via Solana"
             onPress={handleSettle}
             loading={loading}
             style={styles.actionButton}
           />
-
           <Button
             title="Cancel"
             onPress={() => router.back()}
@@ -312,7 +274,6 @@ export default function CreateSettlementScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     padding: 24,
@@ -378,7 +339,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: "hidden", // Ensures picker doesn't bleed out of rounded corners
+    overflow: "hidden", 
   },
   picker: {
     height: 56,

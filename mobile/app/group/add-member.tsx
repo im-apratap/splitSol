@@ -13,7 +13,6 @@ import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
-
 export default function AddMemberScreen() {
   const { groupId } = useLocalSearchParams();
   const [username, setUsername] = useState("");
@@ -21,11 +20,9 @@ export default function AddMemberScreen() {
   const [error, setError] = useState("");
   const [friends, setFriends] = useState<any[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
-
   React.useEffect(() => {
     fetchFriends();
   }, []);
-
   const fetchFriends = async () => {
     try {
       const { data } = await apiClient.get("/friends");
@@ -36,23 +33,18 @@ export default function AddMemberScreen() {
       setLoadingFriends(false);
     }
   };
-
   const handleAddMember = async (targetUsername?: string) => {
     const userToAdd = targetUsername || username.trim();
-
     if (!userToAdd) {
       setError("Please enter a username or select a friend");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       await apiClient.post(`/groups/${groupId}/members`, {
         username: userToAdd,
       });
-      // Navigate back to the group details screen, resolving the promise
       router.back();
     } catch (err: any) {
       setError(
@@ -62,7 +54,6 @@ export default function AddMemberScreen() {
       setLoading(false);
     }
   };
-
   return (
     <Container>
       <ScrollView contentContainerStyle={styles.content}>
@@ -72,10 +63,8 @@ export default function AddMemberScreen() {
             Invite someone to the group using their SolShare username.
           </Text>
         </View>
-
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <Input
             label="Username"
             placeholder="e.g. solanawhale"
@@ -84,14 +73,12 @@ export default function AddMemberScreen() {
             autoCapitalize="none"
             autoFocus
           />
-
           <Button
             title="Add to Group"
             onPress={() => handleAddMember()}
-            loading={loading && !username.includes("friend")} // simplify loading state
+            loading={loading && !username.includes("friend")} 
             style={styles.actionButton}
           />
-
           <Button
             title="Cancel"
             onPress={() => router.back()}
@@ -99,7 +86,6 @@ export default function AddMemberScreen() {
             disabled={loading}
           />
         </View>
-
         <View style={styles.friendsSection}>
           <Text style={styles.sectionTitle}>Or select from Friends</Text>
           {loadingFriends ? (
@@ -136,7 +122,6 @@ export default function AddMemberScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     padding: 24,

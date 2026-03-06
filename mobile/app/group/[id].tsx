@@ -17,9 +17,7 @@ import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useSolPrice } from "../../src/hooks/useSolPrice";
-
 type TabType = "expenses" | "balances" | "members";
-
 export default function GroupDetailsScreen() {
   const { id } = useLocalSearchParams();
   const [group, setGroup] = useState<any>(null);
@@ -29,7 +27,6 @@ export default function GroupDetailsScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("expenses");
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const { solPrice } = useSolPrice();
-
   const fetchGroupData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -39,7 +36,6 @@ export default function GroupDetailsScreen() {
         apiClient.get(`/expenses/balances/${id}`),
         apiClient.get("/users/me"),
       ]);
-
       setGroup(groupRes.data.data);
       setExpenses(expRes.data.data || []);
       setBalances(balRes.data.data?.balances || []);
@@ -50,7 +46,6 @@ export default function GroupDetailsScreen() {
       setLoading(false);
     }
   }, [id]);
-
   const handleDeleteExpense = (expenseId: string) => {
     Alert.alert(
       "Delete Expense",
@@ -76,7 +71,6 @@ export default function GroupDetailsScreen() {
       ],
     );
   };
-
   useFocusEffect(
     React.useCallback(() => {
       if (id) {
@@ -84,7 +78,6 @@ export default function GroupDetailsScreen() {
       }
     }, [id, fetchGroupData]),
   );
-
   if (loading) {
     return (
       <Container style={styles.centerElement}>
@@ -92,7 +85,6 @@ export default function GroupDetailsScreen() {
       </Container>
     );
   }
-
   if (!group) {
     return (
       <Container style={styles.centerElement}>
@@ -105,7 +97,6 @@ export default function GroupDetailsScreen() {
       </Container>
     );
   }
-
   const renderTab = (tab: TabType, label: string) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tab && styles.activeTab]}
@@ -116,11 +107,9 @@ export default function GroupDetailsScreen() {
       </Text>
     </TouchableOpacity>
   );
-
   const renderExpenseItem = ({ item }: { item: any }) => {
     const isPayer =
       item.paidBy?._id === currentUserId || item.paidBy === currentUserId;
-
     return (
       <Card style={[styles.itemCard, { padding: 0 }]}>
         <TouchableOpacity
@@ -167,7 +156,6 @@ export default function GroupDetailsScreen() {
       </Card>
     );
   };
-
   const renderBalanceItem = ({ item }: { item: any }) => {
     const balance = item.netBalance || 0;
     return (
@@ -193,7 +181,6 @@ export default function GroupDetailsScreen() {
       </View>
     );
   };
-
   const renderMemberItem = ({ item }: { item: any }) => (
     <View style={styles.memberRow}>
       <View style={styles.memberIcon}>
@@ -203,7 +190,6 @@ export default function GroupDetailsScreen() {
       <Text style={styles.memberUsername}>@{item.username}</Text>
     </View>
   );
-
   return (
     <Container>
       <View style={styles.header}>
@@ -213,13 +199,11 @@ export default function GroupDetailsScreen() {
         <Text style={styles.title}>{group.name}</Text>
         <View style={{ width: 20 }} />
       </View>
-
       <View style={styles.tabsContainer}>
         {renderTab("expenses", "Expenses")}
         {renderTab("balances", "Balances")}
         {renderTab("members", "Members")}
       </View>
-
       <View style={styles.content}>
         {activeTab === "expenses" && (
           <View style={{ flex: 1 }}>
@@ -233,7 +217,6 @@ export default function GroupDetailsScreen() {
             />
           </View>
         )}
-
         {activeTab === "balances" && (
           <View style={{ flex: 1 }}>
             <Card style={styles.balancesCard}>
@@ -250,7 +233,6 @@ export default function GroupDetailsScreen() {
             </Card>
           </View>
         )}
-
         {activeTab === "members" && (
           <View style={{ flex: 1 }}>
             <Card style={styles.membersCard}>
@@ -276,7 +258,6 @@ export default function GroupDetailsScreen() {
           </View>
         )}
       </View>
-
       <View style={styles.footer}>
         <Button
           title="Add Expense"
@@ -302,7 +283,6 @@ export default function GroupDetailsScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   centerElement: {
     alignItems: "center",
@@ -318,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: colors.background, // Match container
+    backgroundColor: colors.background, 
   },
   backBtn: {
     padding: 12,
@@ -477,7 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 16,
     paddingBottom: Platform.OS === "ios" ? 32 : 16,
-    backgroundColor: colors.background, // Match container
+    backgroundColor: colors.background, 
   },
   actionBtn: {
     flex: 1,

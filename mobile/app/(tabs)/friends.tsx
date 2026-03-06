@@ -14,15 +14,12 @@ import { apiClient } from "../../src/api/client";
 import { Container } from "../../src/components/Container";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-
-// Create types inline or in a separate file if needed later
 type Friend = {
   _id: string;
   name: string;
   username: string;
   pubKey: string;
 };
-
 type FriendRequest = {
   _id: string;
   sender: {
@@ -32,16 +29,12 @@ type FriendRequest = {
   };
   createdAt: string;
 };
-
 export default function FriendsScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
-
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Fetch data
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -58,15 +51,13 @@ export default function FriendsScreen() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, []);
-
   const handleAccept = async (requestId: string) => {
     try {
       await apiClient.post("/friends/accept-request", { requestId });
-      fetchData(); // Refresh list to show new friend
+      fetchData(); 
       Alert.alert("Success", "Friend request accepted");
     } catch (error: any) {
       Alert.alert(
@@ -75,11 +66,10 @@ export default function FriendsScreen() {
       );
     }
   };
-
   const handleDecline = async (requestId: string) => {
     try {
       await apiClient.post("/friends/decline-request", { requestId });
-      fetchData(); // Refresh list to remove request
+      fetchData(); 
     } catch (error: any) {
       Alert.alert(
         "Error",
@@ -87,7 +77,6 @@ export default function FriendsScreen() {
       );
     }
   };
-
   const renderFriend = ({ item }: { item: Friend }) => (
     <View style={styles.card}>
       <View style={styles.avatar}>
@@ -101,7 +90,6 @@ export default function FriendsScreen() {
       </View>
     </View>
   );
-
   const renderRequest = ({ item }: { item: FriendRequest }) => (
     <View style={styles.card}>
       <View style={styles.avatar}>
@@ -129,7 +117,6 @@ export default function FriendsScreen() {
       </View>
     </View>
   );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -137,7 +124,6 @@ export default function FriendsScreen() {
       </View>
     );
   }
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Container>
@@ -150,8 +136,7 @@ export default function FriendsScreen() {
             <FontAwesome5 name="user-plus" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
-
-        {/* Custom Tabs */}
+        {}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "friends" && styles.activeTab]}
@@ -180,7 +165,6 @@ export default function FriendsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
         {activeTab === "friends" ? (
           <FlatList
             data={friends}
@@ -208,7 +192,6 @@ export default function FriendsScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

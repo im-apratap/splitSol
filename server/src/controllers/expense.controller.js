@@ -7,30 +7,24 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Expo } from "expo-server-sdk";
 import { sendPushNotifications } from "../utils/notifications.js";
-
 export const addExpense = async (req, res, next) => {
   try {
     const { description, amount, groupId, splitType, splitAmong, shares } =
       req.body;
-
     if (!description || !amount || !groupId) {
       throw new ApiError(400, "Description, amount, and groupId are required");
     }
-
     const group = await Group.findById(groupId);
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
     const isMember = group.members.some(
       (member) => member.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     const participants = splitAmong || group.members;
-
     if (splitType === "custom" && shares) {
       const totalShares = shares.reduce((sum, s) => sum + s.amount, 0);
       if (Math.abs(totalShares - amount) > 0.01) {
@@ -40,14 +34,12 @@ export const addExpense = async (req, res, next) => {
         );
       }
     }
-
     if (splitType === "percentage" && shares) {
       const totalPercentage = shares.reduce((sum, s) => sum + s.amount, 0);
       if (Math.abs(totalPercentage - 100) > 0.01) {
         throw new ApiError(400, "Percentage shares must add up to 100");
       }
     }
-
     const expense = await Expense.create({
       description,
       amount,
@@ -57,24 +49,19 @@ export const addExpense = async (req, res, next) => {
       splitAmong: participants,
       shares: shares || [],
     });
-
     const populatedExpense = await Expense.findById(expense._id)
       .populate("paidBy", "name username pubKey")
       .populate("splitAmong", "name username pubKey")
       .populate("shares.user", "name username pubKey");
-
     await History.create({
       user: req.user._id,
       actionType: "EXPENSE_ADDED",
       group: groupId,
       description: `You added expense "${description}" of ${amount} to "${group.name}"`,
     });
-
-    // Send push notifications to all users involved
     const messages = [];
     const pushTitle = `New Expense in ${group.name}`;
     const pushBody = `${req.user.name} added "${description}" for $${amount}`;
-
     let usersToNotify = [];
     if (splitType === "equal") {
       usersToNotify = group.members.filter(
@@ -85,7 +72,6 @@ export const addExpense = async (req, res, next) => {
         .map((s) => s.user)
         .filter((id) => id.toString() !== req.user._id.toString());
     }
-
     if (usersToNotify.length > 0) {
       const users = await User.find({ _id: { $in: usersToNotify } });
       for (const user of users) {
@@ -102,15 +88,12 @@ export const addExpense = async (req, res, next) => {
           });
         }
       }
-
       if (messages.length > 0) {
-        // Fire and forget, don't await to block the res
         sendPushNotifications(messages).catch((err) =>
           console.error("Notification Error:", err),
         );
       }
     }
-
     return res
       .status(201)
       .json(
@@ -120,29 +103,24 @@ export const addExpense = async (req, res, next) => {
     next(error);
   }
 };
-
 export const getGroupExpenses = async (req, res, next) => {
   try {
     const { groupId } = req.params;
-
     const group = await Group.findById(groupId);
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
     const isMember = group.members.some(
       (member) => member.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     const expenses = await Expense.find({ groupId })
       .populate("paidBy", "name username pubKey")
       .populate("splitAmong", "name username pubKey")
       .populate("shares.user", "name username pubKey")
       .sort({ createdAt: -1 });
-
     return res
       .status(200)
       .json(new ApiResponse(200, expenses, "Expenses fetched successfully"));
@@ -150,11 +128,9 @@ export const getGroupExpenses = async (req, res, next) => {
     next(error);
   }
 };
-
 export const getGroupBalances = async (req, res, next) => {
   try {
     const { groupId } = req.params;
-
     const group = await Group.findById(groupId).populate(
       "members",
       "name username pubKey",
@@ -162,24 +138,19 @@ export const getGroupBalances = async (req, res, next) => {
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
     const isMember = group.members.some(
       (member) => member._id.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     const expenses = await Expense.find({ groupId });
-
     const balances = {};
     group.members.forEach((member) => {
       balances[member._id.toString()] = 0;
     });
-
     for (const expense of expenses) {
       const payerId = expense.paidBy.toString();
-
       if (expense.splitType === "equal") {
         const perPerson = expense.amount / expense.splitAmong.length;
         balances[payerId] += expense.amount;
@@ -202,24 +173,17 @@ export const getGroupBalances = async (req, res, next) => {
         });
       }
     }
-
-    // Fetch all confirmed settlements for this group
     const confirmedSettlements = await Settlement.find({
       groupId,
       status: "confirmed",
     });
-
-    // Apply settlements to balances
     for (const settlement of confirmedSettlements) {
       const fromId = settlement.from.toString();
       const toId = settlement.to.toString();
-      // 'from' paid 'to', so 'from' balance increases (less debt), 'to' balance decreases (less credit)
       if (balances[fromId] !== undefined) balances[fromId] += settlement.amount;
       if (balances[toId] !== undefined) balances[toId] -= settlement.amount;
     }
-
     const settlements = calculateSettlements(balances);
-
     const memberMap = {};
     group.members.forEach((member) => {
       memberMap[member._id.toString()] = {
@@ -229,18 +193,15 @@ export const getGroupBalances = async (req, res, next) => {
         pubKey: member.pubKey,
       };
     });
-
     const balanceDetails = Object.entries(balances).map(([userId, amount]) => ({
       user: memberMap[userId],
       netBalance: Math.round(amount * 100) / 100,
     }));
-
     const settlementDetails = settlements.map((s) => ({
       from: memberMap[s.from],
       to: memberMap[s.to],
       amount: Math.round(s.amount * 100) / 100,
     }));
-
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -255,15 +216,10 @@ export const getGroupBalances = async (req, res, next) => {
     next(error);
   }
 };
-
-// Greedy algorithm: settle debts with minimum transactions
 function calculateSettlements(balances) {
   const settlements = [];
-
-  // Separate into debtors (negative) and creditors (positive)
   const debtors = [];
   const creditors = [];
-
   Object.entries(balances).forEach(([userId, amount]) => {
     const rounded = Math.round(amount * 100) / 100;
     if (rounded < -0.01) {
@@ -272,17 +228,12 @@ function calculateSettlements(balances) {
       creditors.push({ userId, amount: rounded });
     }
   });
-
-  // Sort both by amount descending
   debtors.sort((a, b) => b.amount - a.amount);
   creditors.sort((a, b) => b.amount - a.amount);
-
   let i = 0;
   let j = 0;
-
   while (i < debtors.length && j < creditors.length) {
     const settleAmount = Math.min(debtors[i].amount, creditors[j].amount);
-
     if (settleAmount > 0.01) {
       settlements.push({
         from: debtors[i].userId,
@@ -290,48 +241,37 @@ function calculateSettlements(balances) {
         amount: settleAmount,
       });
     }
-
     debtors[i].amount -= settleAmount;
     creditors[j].amount -= settleAmount;
-
     if (debtors[i].amount < 0.01) i++;
     if (creditors[j].amount < 0.01) j++;
   }
-
   return settlements;
 }
-
 export const deleteExpense = async (req, res, next) => {
   try {
     const { expenseId } = req.params;
-
     const expense = await Expense.findById(expenseId);
     if (!expense) {
       throw new ApiError(404, "Expense not found");
     }
-
     const group = await Group.findById(expense.groupId);
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
-    // Any member of the group can delete the expense
     const isMember = group.members.some(
       (m) => m.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     await Expense.findByIdAndDelete(expenseId);
-
     await History.create({
       user: req.user._id,
       actionType: "EXPENSE_DELETED",
       group: group._id,
       description: `You deleted expense "${expense.description}" of ${expense.amount} from "${group.name}"`,
     });
-
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Expense deleted successfully"));
@@ -339,32 +279,26 @@ export const deleteExpense = async (req, res, next) => {
     next(error);
   }
 };
-
 export const getExpense = async (req, res, next) => {
   try {
     const { expenseId } = req.params;
-
     const expense = await Expense.findById(expenseId)
       .populate("paidBy", "name username pubKey")
       .populate("splitAmong", "name username pubKey")
       .populate("shares.user", "name username pubKey");
-
     if (!expense) {
       throw new ApiError(404, "Expense not found");
     }
-
     const group = await Group.findById(expense.groupId);
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
     const isMember = group.members.some(
       (m) => m.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     return res
       .status(200)
       .json(new ApiResponse(200, expense, "Expense fetched successfully"));
@@ -372,30 +306,24 @@ export const getExpense = async (req, res, next) => {
     next(error);
   }
 };
-
 export const updateExpense = async (req, res, next) => {
   try {
     const { expenseId } = req.params;
     const { description, amount, splitType, splitAmong, shares } = req.body;
-
     const expense = await Expense.findById(expenseId);
     if (!expense) {
       throw new ApiError(404, "Expense not found");
     }
-
     const group = await Group.findById(expense.groupId);
     if (!group) {
       throw new ApiError(404, "Group not found");
     }
-
-    // Any member can edit
     const isMember = group.members.some(
       (m) => m.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
     if (amount) {
       if (splitType === "custom" && shares) {
         const totalShares = shares.reduce((sum, s) => sum + s.amount, 0);
@@ -413,14 +341,12 @@ export const updateExpense = async (req, res, next) => {
         }
       }
     }
-
     const updateData = {};
     if (description) updateData.description = description;
     if (amount) updateData.amount = amount;
     if (splitType) updateData.splitType = splitType;
     if (splitAmong) updateData.splitAmong = splitAmong;
     if (shares) updateData.shares = shares;
-
     const updatedExpense = await Expense.findByIdAndUpdate(
       expenseId,
       updateData,
@@ -429,14 +355,12 @@ export const updateExpense = async (req, res, next) => {
       .populate("paidBy", "name username pubKey")
       .populate("splitAmong", "name username pubKey")
       .populate("shares.user", "name username pubKey");
-
     await History.create({
       user: req.user._id,
-      actionType: "EXPENSE_ADDED", // Log edit event generically or reuse ADDED for display since no UPDATED enum exists
+      actionType: "EXPENSE_ADDED", 
       group: group._id,
       description: `You edited expense "${updatedExpense.description}" (${updatedExpense.amount}) in "${group.name}"`,
     });
-
     return res
       .status(200)
       .json(

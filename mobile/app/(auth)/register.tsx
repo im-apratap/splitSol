@@ -18,7 +18,6 @@ import {
   registerForPushNotificationsAsync,
   sendPushTokenToBackend,
 } from "../../src/utils/notifications";
-
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,16 +26,13 @@ export default function RegisterScreen() {
   const [pubKey, setPubKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handleRegister = async () => {
     if (!name || !email || !username || !password || !pubKey) {
       setError("Please fill in all fields");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const response = await apiClient.post("/users/register", {
         name,
@@ -45,17 +41,12 @@ export default function RegisterScreen() {
         password,
         pubKey,
       });
-
-      // The register endpoint returns accessToken/refreshToken
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
-
-      // Register push token
       const pushToken = await registerForPushNotificationsAsync();
       if (pushToken) {
         await sendPushTokenToBackend(pushToken);
       }
-
       router.replace("/(tabs)/home");
     } catch (err: any) {
       setError(
@@ -65,7 +56,6 @@ export default function RegisterScreen() {
       setLoading(false);
     }
   };
-
   const handleConnectWallet = async () => {
     try {
       const key = await connectWallet();
@@ -76,7 +66,6 @@ export default function RegisterScreen() {
       }
     }
   };
-
   return (
     <Container>
       <KeyboardAvoidingView
@@ -88,17 +77,14 @@ export default function RegisterScreen() {
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join SolShare today</Text>
           </View>
-
           <View style={styles.form}>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
             <Input
               label="Full Name"
               placeholder="Enter Your Name"
               value={name}
               onChangeText={setName}
             />
-
             <Input
               label="Email"
               placeholder="Enter Your Email"
@@ -107,7 +93,6 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
             />
-
             <Input
               label="Username"
               placeholder="Enter a Unique Username"
@@ -115,7 +100,6 @@ export default function RegisterScreen() {
               onChangeText={setUsername}
               autoCapitalize="none"
             />
-
             <Input
               label="Password"
               placeholder="Create a strong password"
@@ -123,7 +107,6 @@ export default function RegisterScreen() {
               onChangeText={setPassword}
               secureTextEntry
             />
-
             <View style={styles.walletSection}>
               <Text style={styles.walletLabel}>Solana Public Key</Text>
               {pubKey ? (
@@ -150,14 +133,12 @@ export default function RegisterScreen() {
                 />
               )}
             </View>
-
             <Button
               title="Create Account"
               onPress={handleRegister}
               loading={loading}
               style={styles.registerButton}
             />
-
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <Link href="/(auth)/login" asChild>
@@ -170,7 +151,6 @@ export default function RegisterScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
