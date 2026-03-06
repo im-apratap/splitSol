@@ -16,18 +16,15 @@ import { colors } from "../../src/theme/colors";
 import { Container } from "../../src/components/Container";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
-
 export default function AddFriendScreen() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleSendRequest = async () => {
     if (!username.trim()) {
       Alert.alert("Error", "Please enter a username");
       return;
     }
-
     setLoading(true);
     try {
       await apiClient.post("/friends/send-request", {
@@ -47,7 +44,6 @@ export default function AddFriendScreen() {
       setLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -65,7 +61,6 @@ export default function AddFriendScreen() {
             <Text style={styles.title}>Add Friend</Text>
             <View style={{ width: 44 }} />
           </View>
-
           <View style={styles.formContainer}>
             <Text style={styles.label}>Search by Username</Text>
             <TextInput
@@ -77,13 +72,11 @@ export default function AddFriendScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-
             <Text style={styles.description}>
               Enter your friend&apos;s exact username to send them a friend request.
               They will need to accept it before they appear in your friends
               list.
             </Text>
-
             <TouchableOpacity
               style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
               onPress={handleSendRequest}
@@ -101,7 +94,6 @@ export default function AddFriendScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

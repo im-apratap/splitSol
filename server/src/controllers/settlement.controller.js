@@ -16,26 +16,19 @@ import {
 } from "../utils/solana.js";
 import { Expo } from "expo-server-sdk";
 import { sendPushNotifications } from "../utils/notifications.js";
-
-// Calculate net balances for a group (reused from expense controller logic).
 const calculateNetBalances = async (groupId) => {
   const group = await Group.findById(groupId).populate(
     "members",
     "name username pubKey",
   );
-
   if (!group) throw new ApiError(404, "Group not found");
-
   const expenses = await Expense.find({ groupId });
-
   const balances = {};
   group.members.forEach((member) => {
     balances[member._id.toString()] = 0;
   });
-
   for (const expense of expenses) {
     const payerId = expense.paidBy.toString();
-
     if (expense.splitType === "equal") {
       const perPerson = expense.amount / expense.splitAmong.length;
       balances[payerId] += expense.amount;
@@ -58,27 +51,19 @@ const calculateNetBalances = async (groupId) => {
       });
     }
   }
-
-  // Fetch all confirmed settlements for this group
   const confirmedSettlements = await Settlement.find({
     groupId,
     status: "confirmed",
   });
-
-  // Apply settlements to balances
   for (const settlement of confirmedSettlements) {
     const fromId = settlement.from.toString();
     const toId = settlement.to.toString();
-    // 'from' paid 'to', so 'from' balance increases (less debt), 'to' balance decreases (less credit)
     if (balances[fromId] !== undefined) balances[fromId] += settlement.amount;
     if (balances[toId] !== undefined) balances[toId] -= settlement.amount;
   }
-
-  // Calculate minimum settlements using greedy algorithm
   const settlements = [];
   const debtors = [];
   const creditors = [];
-
   Object.entries(balances).forEach(([userId, amount]) => {
     const rounded = Math.round(amount * 100) / 100;
     if (rounded < -0.01) {
@@ -87,16 +72,12 @@ const calculateNetBalances = async (groupId) => {
       creditors.push({ userId, amount: rounded });
     }
   });
-
   debtors.sort((a, b) => b.amount - a.amount);
   creditors.sort((a, b) => b.amount - a.amount);
-
   let i = 0;
   let j = 0;
-
   while (i < debtors.length && j < creditors.length) {
     const settleAmount = Math.min(debtors[i].amount, creditors[j].amount);
-
     if (settleAmount > 0.01) {
       settlements.push({
         from: debtors[i].userId,
@@ -104,45 +85,30 @@ const calculateNetBalances = async (groupId) => {
         amount: Math.round(settleAmount * 100) / 100,
       });
     }
-
     debtors[i].amount -= settleAmount;
     creditors[j].amount -= settleAmount;
-
     if (debtors[i].amount < 0.01) i++;
     if (creditors[j].amount < 0.01) j++;
   }
-
   return { group, settlements };
 };
-
-// Create settlement transactions for a group.
-// Returns unsigned transactions for the debtor to sign on the mobile app.
 export const createSettlement = async (req, res, next) => {
   try {
     const { groupId, toUserId, amount } = req.body;
-
     if (!groupId) {
       throw new ApiError(400, "groupId is required");
     }
-
     const { group, settlements } = await calculateNetBalances(groupId);
-
-    // Check that the requesting user is a member
     const isMember = group.members.some(
       (member) => member._id.toString() === req.user._id.toString(),
     );
     if (!isMember) {
       throw new ApiError(403, "You are not a member of this group");
     }
-
-    // Find settlements where the current user is the debtor
     let userSettlements = settlements.filter(
       (s) => s.from === req.user._id.toString(),
     );
-
-    // If specific parameters are provided, override the greedy calculation
     if (toUserId && amount) {
-      // Validate that this settlement makes sense (the user owes this person)
       const matchingSettlement = userSettlements.find((s) => s.to === toUserId);
       if (!matchingSettlement) {
         throw new ApiError(
@@ -151,13 +117,11 @@ export const createSettlement = async (req, res, next) => {
         );
       }
       if (amount > matchingSettlement.amount + 0.05) {
-        // Small floating point buffer
         throw new ApiError(
           400,
           `You only owe ${matchingSettlement.amount} SOL to this user.`,
         );
       }
-      // Replace the batch with just this single specific transfer
       userSettlements = [
         {
           from: req.user._id.toString(),
@@ -166,7 +130,6 @@ export const createSettlement = async (req, res, next) => {
         },
       ];
     }
-
     if (userSettlements.length === 0) {
       return res
         .status(200)
@@ -178,53 +141,38 @@ export const createSettlement = async (req, res, next) => {
           ),
         );
     }
-
-    // Build member map for pubKey lookup
     const memberMap = {};
     group.members.forEach((member) => {
       memberMap[member._id.toString()] = member;
     });
-
-    // Check that the user has a pubKey
     const userPubKey = memberMap[req.user._id.toString()]?.pubKey;
     if (!userPubKey) {
       throw new ApiError(400, "Your wallet public key is not set");
     }
-
-    // Fetch SOL price to convert USD to SOL
     const solPrice = await getSolPriceInUSD();
-
-    // Check wallet balance
     const balance = await getBalance(userPubKey);
     const totalOweUSD = userSettlements.reduce((sum, s) => sum + s.amount, 0);
     const totalOweSOL = totalOweUSD / solPrice;
-
     if (balance < totalOweSOL) {
       throw new ApiError(
         400,
         `Insufficient balance. You have ${balance.toFixed(4)} SOL but owe ${totalOweSOL.toFixed(4)} SOL ($${totalOweUSD.toFixed(2)})`,
       );
     }
-
-    // Build transfer transactions
     const transfers = userSettlements.map((s) => {
       const amountInSOL = s.amount / solPrice;
       return {
         toPubkey: memberMap[s.to].pubKey,
-        amountInSOL: Math.max(0.000000001, amountInSOL), // ensure non-zero
+        amountInSOL: Math.max(0.000000001, amountInSOL), 
         toUser: memberMap[s.to],
       };
     });
-
-    // Create on-chain memo
     const memo = JSON.stringify({
       type: "settlement",
       groupId: group._id,
       groupName: group.name,
       note: "Settled via SolShare",
     });
-
-    // Use batch transaction if multiple creditors
     let transactionData;
     if (transfers.length === 1) {
       transactionData = await buildTransferTransaction(
@@ -240,8 +188,6 @@ export const createSettlement = async (req, res, next) => {
         memo,
       );
     }
-
-    // Save pending settlements in DB
     const settlementRecords = [];
     for (const s of userSettlements) {
       const amountInSOL = s.amount / solPrice;
@@ -255,7 +201,6 @@ export const createSettlement = async (req, res, next) => {
       });
       settlementRecords.push(record);
     }
-
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -278,44 +223,30 @@ export const createSettlement = async (req, res, next) => {
     next(error);
   }
 };
-
-// Confirm a settlement after the mobile app submits the signed transaction.
-// The app sends the tx signature for verification.
 export const confirmSettlement = async (req, res, next) => {
   try {
     const { settlementIds, txSignature } = req.body;
-
     if (!settlementIds || !txSignature) {
       throw new ApiError(400, "settlementIds and txSignature are required");
     }
-
-    // Verify the transaction on Solana
     const verification = await verifyTransaction(txSignature);
-
     if (!verification.confirmed) {
-      // Update settlements as failed
       await Settlement.updateMany(
         { _id: { $in: settlementIds } },
         { status: "failed", txSignature },
       );
-
       throw new ApiError(400, "Transaction not confirmed on Solana");
     }
-
-    // Update settlements as confirmed
     await Settlement.updateMany(
       { _id: { $in: settlementIds } },
       { status: "confirmed", txSignature },
     );
-
     const updatedSettlements = await Settlement.find({
       _id: { $in: settlementIds },
     })
       .populate("from", "name username pubKey")
       .populate("to", "name username pubKey")
       .populate("groupId", "name");
-
-    // Log history for each confirmed settlement
     for (const s of updatedSettlements) {
       await History.create({
         user: s.from._id,
@@ -332,7 +263,6 @@ export const confirmSettlement = async (req, res, next) => {
         txSignature,
       });
     }
-
     return res
       .status(200)
       .json(
@@ -346,31 +276,22 @@ export const confirmSettlement = async (req, res, next) => {
     next(error);
   }
 };
-
-// Submit a signed transaction from the mobile app.
-// Broadcasts to Solana, then confirms the settlements.
 export const submitSignedTransaction = async (req, res, next) => {
   try {
     const { signedTransaction, settlementIds } = req.body;
-
     if (!signedTransaction || !settlementIds) {
       throw new ApiError(
         400,
         "signedTransaction and settlementIds are required",
       );
     }
-
-    // Deserialize and send the signed transaction
     const txBuffer = Buffer.from(signedTransaction, "base64");
     const txSignature = await connection.sendRawTransaction(txBuffer, {
       skipPreflight: false,
       preflightCommitment: "confirmed",
     });
-
-    // Wait for confirmation
     const { blockhash, lastValidBlockHeight } =
       await connection.getLatestBlockhash();
-
     const confirmation = await connection.confirmTransaction(
       {
         signature: txSignature,
@@ -379,7 +300,6 @@ export const submitSignedTransaction = async (req, res, next) => {
       },
       "confirmed",
     );
-
     if (confirmation.value.err) {
       await Settlement.updateMany(
         { _id: { $in: settlementIds } },
@@ -387,21 +307,16 @@ export const submitSignedTransaction = async (req, res, next) => {
       );
       throw new ApiError(400, "Transaction failed on-chain");
     }
-
-    // Update settlements as confirmed
     await Settlement.updateMany(
       { _id: { $in: settlementIds } },
       { status: "confirmed", txSignature },
     );
-
     const updatedSettlements = await Settlement.find({
       _id: { $in: settlementIds },
     })
       .populate("from", "name username pubKey")
       .populate("to", "name username pubKey")
       .populate("groupId", "name");
-
-    // Log history for each confirmed settlement
     for (const s of updatedSettlements) {
       await History.create({
         user: s.from._id,
@@ -418,11 +333,8 @@ export const submitSignedTransaction = async (req, res, next) => {
         txSignature,
       });
     }
-
-    // Attempt to notify the receivers via Expo Push
     const messages = [];
     for (const s of updatedSettlements) {
-      // Find the receiver's full user doc to get their token
       const receiver = await User.findById(s.to._id);
       if (
         receiver &&
@@ -438,11 +350,9 @@ export const submitSignedTransaction = async (req, res, next) => {
         });
       }
     }
-
     if (messages.length > 0) {
       sendPushNotifications(messages).catch(console.error);
     }
-
     return res
       .status(200)
       .json(
@@ -456,17 +366,13 @@ export const submitSignedTransaction = async (req, res, next) => {
     next(error);
   }
 };
-
-// Get all settlements for a group.
 export const getGroupSettlements = async (req, res, next) => {
   try {
     const { groupId } = req.params;
-
     const settlements = await Settlement.find({ groupId })
       .populate("from", "name username pubKey")
       .populate("to", "name username pubKey")
       .sort({ createdAt: -1 });
-
     return res
       .status(200)
       .json(
@@ -476,18 +382,13 @@ export const getGroupSettlements = async (req, res, next) => {
     next(error);
   }
 };
-
-// Get wallet balance for the current user.
 export const getWalletBalance = async (req, res, next) => {
   try {
     const pubKey = req.user.pubKey;
-
     if (!pubKey) {
       throw new ApiError(400, "Wallet public key not set");
     }
-
     const balance = await getBalance(pubKey);
-
     return res
       .status(200)
       .json(new ApiResponse(200, { balance, pubKey }, "Balance fetched"));
@@ -495,12 +396,9 @@ export const getWalletBalance = async (req, res, next) => {
     next(error);
   }
 };
-
-// Get current SOL price in USD (cached).
 export const getSolPrice = async (req, res, next) => {
   try {
     const { price, updatedAt } = await getCachedSolPriceInUSD();
-
     return res
       .status(200)
       .json(

@@ -17,22 +17,18 @@ import {
   registerForPushNotificationsAsync,
   sendPushTokenToBackend,
 } from "../../src/utils/notifications";
-
 export default function LoginScreen() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handleLogin = async () => {
     if (!emailOrUsername || !password) {
       setError("Please fill in all fields");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const payload: any = { password };
       if (emailOrUsername.includes("@")) {
@@ -40,19 +36,13 @@ export default function LoginScreen() {
       } else {
         payload.username = emailOrUsername.toLowerCase().trim();
       }
-
       const response = await apiClient.post("/users/login", payload);
-
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
-
-      // Register push token
       const pushToken = await registerForPushNotificationsAsync();
       if (pushToken) {
         await sendPushTokenToBackend(pushToken);
       }
-
-      // Navigate to tabs
       router.replace("/(tabs)/home");
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Failed to login");
@@ -60,7 +50,6 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
-
   return (
     <Container>
       <KeyboardAvoidingView
@@ -74,10 +63,8 @@ export default function LoginScreen() {
             </Text>
             <Text style={styles.subtitle}>Settle up on the Solana network</Text>
           </View>
-
           <View style={styles.form}>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
             <Input
               label="Email or Username"
               placeholder="Enter your email or username"
@@ -86,7 +73,6 @@ export default function LoginScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
             />
-
             <Input
               label="Password"
               placeholder="Enter your password"
@@ -94,14 +80,12 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry
             />
-
             <Button
               title="Sign In"
               onPress={handleLogin}
               loading={loading}
               style={styles.loginButton}
             />
-
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 Don&apos;t have an account?{" "}
@@ -116,7 +100,6 @@ export default function LoginScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
@@ -133,11 +116,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: "800",
-    color: colors.primary, // Dark charcoal
+    color: colors.primary, 
     letterSpacing: -1,
   },
   highlight: {
-    color: colors.secondary, // Green or Purple accent
+    color: colors.secondary, 
   },
   subtitle: {
     fontSize: 16,
@@ -166,7 +149,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkText: {
-    color: colors.primary, // Dark prominent link
+    color: colors.primary, 
     fontSize: 14,
     fontWeight: "700",
   },

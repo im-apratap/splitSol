@@ -1,5 +1,4 @@
 import { ApiError } from "../utils/ApiError.js";
-
 export const errorHandler = (err, req, res, next) => {
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
@@ -8,7 +7,6 @@ export const errorHandler = (err, req, res, next) => {
       errors: err.errors,
     });
   }
-
   console.error("Unexpected error:", err);
   return res.status(500).json({
     success: false,

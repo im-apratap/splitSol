@@ -9,13 +9,11 @@ import {
   StyleProp,
 } from "react-native";
 import { colors } from "../theme/colors";
-
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: StyleProp<ViewStyle>;
 }
-
 export const Input: React.FC<InputProps> = ({
   label,
   error,
@@ -35,7 +33,6 @@ export const Input: React.FC<InputProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     marginVertical: 8,
@@ -52,7 +49,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 999, // Pill shaped input
+    borderRadius: 999, 
     paddingHorizontal: 24,
     paddingVertical: 18,
     color: colors.text,

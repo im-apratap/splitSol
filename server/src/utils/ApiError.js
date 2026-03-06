@@ -11,7 +11,6 @@ class ApiError extends Error{
         this.errors = errors
         this.success = false
         this.message = message
-
         if(stack){
             this.stack = stack
         }else{
@@ -19,5 +18,4 @@ class ApiError extends Error{
         }
     }
 }
-    
 export {ApiError}

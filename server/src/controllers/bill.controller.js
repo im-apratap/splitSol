@@ -1,10 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Fetch SOL price in a given fiat currency from CoinGecko.
 export const getSolPrice = async (req, res, next) => {
   try {
     const currency = (req.query.currency || "inr").toLowerCase();
@@ -12,7 +9,6 @@ export const getSolPrice = async (req, res, next) => {
       `https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=${currency}`,
     );
     const data = await response.json();
-
     if (data.solana && data.solana[currency]) {
       return res.status(200).json(
         new ApiResponse(
@@ -25,28 +21,21 @@ export const getSolPrice = async (req, res, next) => {
         ),
       );
     }
-
     throw new ApiError(404, `Could not fetch SOL price for ${currency}`);
   } catch (error) {
     if (error instanceof ApiError) return next(error);
     next(new ApiError(500, "Failed to fetch SOL price"));
   }
 };
-
-// Scan a bill/receipt image and extract expense details using Gemini API.
 export const scanBill = async (req, res, next) => {
   try {
     const { image } = req.body;
-
     if (!image) {
       throw new ApiError(400, "image (base64) is required");
     }
-
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     const prompt = `You are a receipt/bill scanner. Analyze this image of a receipt or bill and extract the following information in JSON format ONLY. Do not include any markdown formatting, code blocks, or extra text — return ONLY the raw JSON object.
-
 {
   "description": "Brief description of the purchase (e.g., 'Dinner at Pizza Hut', 'Groceries from Walmart')",
   "totalAmount": 0.00,
@@ -61,14 +50,12 @@ export const scanBill = async (req, res, next) => {
   "merchant": "Store/restaurant name if visible",
   "date": "Date if visible (YYYY-MM-DD format)"
 }
-
 Rules:
 - totalAmount should be the final total including tax/tip if shown
 - currency must be a standard 3-letter code (INR, USD, EUR, etc.)
 - If you can't read certain details, make your best estimate
 - items array should list individual line items if visible
 - Return ONLY valid JSON, no markdown, no code blocks, no explanation`;
-
     const result = await model.generateContent([
       prompt,
       {
@@ -78,9 +65,7 @@ Rules:
         },
       },
     ]);
-
     const responseText = result.response.text().trim();
-
     let parsedData;
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -95,7 +80,6 @@ Rules:
         "Could not parse bill details from the image. Please try a clearer photo.",
       );
     }
-
     return res.status(200).json(
       new ApiResponse(
         200,

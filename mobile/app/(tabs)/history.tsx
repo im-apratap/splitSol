@@ -16,12 +16,10 @@ import { Container } from "../../src/components/Container";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { openSolscanTx } from "../../src/utils/solana";
-
 type Group = {
   _id: string;
   name: string;
 };
-
 type HistoryLog = {
   _id: string;
   actionType: string;
@@ -30,13 +28,11 @@ type HistoryLog = {
   createdAt: string;
   txSignature?: string;
 };
-
 export default function HistoryScreen() {
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState("ALL");
-
   const fetchHistory = async () => {
     try {
       const response = await apiClient.get("/history");
@@ -48,16 +44,13 @@ export default function HistoryScreen() {
       setRefreshing(false);
     }
   };
-
   useEffect(() => {
     fetchHistory();
   }, []);
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchHistory();
   }, []);
-
   const getActionDetails = (actionType: string) => {
     switch (actionType) {
       case "EXPENSE_ADDED":
@@ -102,7 +95,6 @@ export default function HistoryScreen() {
         };
     }
   };
-
   const renderIcon = (
     iconFamily: string,
     iconName: string,
@@ -114,7 +106,6 @@ export default function HistoryScreen() {
     }
     return <FontAwesome5 name={iconName} size={size} color={color} />;
   };
-
   const formatTime = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
@@ -122,11 +113,9 @@ export default function HistoryScreen() {
       return dateString;
     }
   };
-
   const renderHistoryItem = ({ item }: { item: HistoryLog }) => {
     const { icon, color, iconFamily } = getActionDetails(item.actionType);
     const isSettlement = item.actionType.includes("SETTLEMENT");
-
     return (
       <View style={styles.card}>
         <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
@@ -155,9 +144,7 @@ export default function HistoryScreen() {
       </View>
     );
   };
-
   const filters = ["ALL", "EXPENSES", "SETTLEMENTS", "GROUPS", "FRIENDS"];
-
   const filteredHistory = history.filter((item) => {
     if (filter === "ALL") return true;
     if (filter === "EXPENSES") return item.actionType.includes("EXPENSE");
@@ -169,7 +156,6 @@ export default function HistoryScreen() {
       );
     return true;
   });
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -177,14 +163,12 @@ export default function HistoryScreen() {
       </View>
     );
   }
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Container>
         <View style={styles.header}>
           <Text style={styles.title}>History</Text>
         </View>
-
         <View>
           <ScrollView
             horizontal
@@ -214,7 +198,6 @@ export default function HistoryScreen() {
             ))}
           </ScrollView>
         </View>
-
         <FlatList
           data={filteredHistory}
           keyExtractor={(item) => item._id}
@@ -240,7 +223,6 @@ export default function HistoryScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const friendRequestSchema = mongoose.Schema(
   {
     sender: {
@@ -20,10 +19,7 @@ const friendRequestSchema = mongoose.Schema(
   },
   { timestamps: true },
 );
-
-// Ensure a user can only send one active request to another user
 friendRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
-
 export const FriendRequest = mongoose.model(
   "FriendRequest",
   friendRequestSchema,

@@ -7,15 +7,11 @@ import {
   getFriends,
   getPendingRequests,
 } from "../controllers/friend.controller.js";
-
 const router = express.Router();
-
-router.use(verifyJWT); // Secure all friends routes
-
+router.use(verifyJWT); 
 router.route("/").get(getFriends);
 router.route("/requests").get(getPendingRequests);
 router.route("/send-request").post(sendFriendRequest);
 router.route("/accept-request").post(acceptFriendRequest);
 router.route("/decline-request").post(declineFriendRequest);
-
 export default router;

@@ -18,27 +18,19 @@ import { Input } from "../../src/components/Input";
 import { Button } from "../../src/components/Button";
 import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
-
 export default function CreateExpenseScreen() {
   const { groupId } = useLocalSearchParams();
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [splitType, setSplitType] = useState("equal");
-
-  // Advanced Split State
   const [members, setMembers] = useState<any[]>([]);
   const [shares, setShares] = useState<{ [key: string]: string }>({});
-
-  // Standard Form State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Camera State
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-
   const fetchMembers = useCallback(async () => {
     try {
       const res = await apiClient.get(`/groups/${groupId}`);
@@ -47,37 +39,29 @@ export default function CreateExpenseScreen() {
       console.warn("Could not fetch members for split options");
     }
   }, [groupId]);
-
   useEffect(() => {
     if (groupId) fetchMembers();
   }, [groupId, fetchMembers]);
-
   const handleShareChange = (userId: string, value: string) => {
     setShares((prev) => ({ ...prev, [userId]: value }));
   };
-
   const handleAddExpense = async () => {
     if (!description || !amount || isNaN(Number(amount))) {
       setError("Please provide a valid description and amount");
       return;
     }
-
-    // Build shares array for API if custom/percentage
     let sharesPayload: any[] = [];
     if (splitType === "custom" || splitType === "percentage") {
       sharesPayload = Object.entries(shares)
         .filter(([_, val]) => val !== "" && !isNaN(Number(val)))
         .map(([user, val]) => ({ user, amount: Number(val) }));
-
       if (sharesPayload.length === 0) {
         setError(`Please enter the ${splitType} amounts below`);
         return;
       }
     }
-
     setLoading(true);
     setError("");
-
     try {
       await apiClient.post("/expenses", {
         groupId,
@@ -95,7 +79,6 @@ export default function CreateExpenseScreen() {
       setLoading(false);
     }
   };
-
   const handleOpenCamera = async () => {
     if (!permission?.granted) {
       const { granted } = await requestPermission();
@@ -107,20 +90,15 @@ export default function CreateExpenseScreen() {
     setError("");
     setIsCameraActive(true);
   };
-
   const takePicture = async () => {
     if (!cameraRef.current) return;
-
     setIsScanning(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.5,
-        base64: false, // We'll compress it manually to ensure it's not too massive
+        base64: false, 
       });
-
       if (!photo?.uri) throw new Error("Failed to capture image");
-
-      // Compress and convert to base64
       const manipulated = await ImageManipulator.manipulateAsync(
         photo.uri,
         [{ resize: { width: 800 } }],
@@ -130,18 +108,13 @@ export default function CreateExpenseScreen() {
           base64: true,
         },
       );
-
-      // Tell backend to scan the image with Gemini
       const response = await apiClient.post("/bill/scan", {
         image: `data:image/jpeg;base64,${manipulated.base64}`,
       });
-
-      // Auto-fill form
       const { description: scannedDesc, totalAmount } = response.data.data;
       if (scannedDesc) setDescription(scannedDesc);
       if (totalAmount !== undefined && totalAmount !== null)
         setAmount(totalAmount.toString());
-
       setIsCameraActive(false);
     } catch (err: any) {
       setError(
@@ -153,22 +126,16 @@ export default function CreateExpenseScreen() {
       setIsScanning(false);
     }
   };
-
   const uploadFromGallery = async () => {
     try {
-      // No strict permissions required for basic gallery read in modern Expo versions,
-      // but launching it handles the prompt OS-side if needed.
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
         quality: 1,
       });
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setIsScanning(true);
         const photoUri = result.assets[0].uri;
-
-        // Compress identically to the camera
         const manipulated = await ImageManipulator.manipulateAsync(
           photoUri,
           [{ resize: { width: 800 } }],
@@ -178,11 +145,9 @@ export default function CreateExpenseScreen() {
             base64: true,
           },
         );
-
         const response = await apiClient.post("/bill/scan", {
           image: `data:image/jpeg;base64,${manipulated.base64}`,
         });
-
         const { description: scannedDesc, totalAmount } = response.data.data;
         if (scannedDesc) setDescription(scannedDesc);
         if (totalAmount !== undefined && totalAmount !== null)
@@ -198,7 +163,6 @@ export default function CreateExpenseScreen() {
       setIsScanning(false);
     }
   };
-
   if (isCameraActive) {
     return (
       <View style={styles.cameraContainer}>
@@ -210,7 +174,6 @@ export default function CreateExpenseScreen() {
             >
               <FontAwesome5 name="times" size={24} color="#FFF" />
             </TouchableOpacity>
-
             <View style={styles.scanTargetGroup}>
               <FontAwesome5
                 name="receipt"
@@ -221,7 +184,6 @@ export default function CreateExpenseScreen() {
                 Position bill inside frame
               </Text>
             </View>
-
             <View style={styles.cameraControls}>
               {isScanning ? (
                 <View style={styles.scanningBadge}>
@@ -242,7 +204,6 @@ export default function CreateExpenseScreen() {
       </View>
     );
   }
-
   return (
     <Container>
       <ScrollView contentContainerStyle={styles.content}>
@@ -250,10 +211,8 @@ export default function CreateExpenseScreen() {
           <Text style={styles.title}>Add Expense</Text>
           <Text style={styles.subtitle}>Split a new bill with the group</Text>
         </View>
-
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <View style={styles.aiButtonsRow}>
             <TouchableOpacity
               style={[styles.aiScanButton, styles.aiButtonHalf]}
@@ -262,7 +221,6 @@ export default function CreateExpenseScreen() {
               <FontAwesome5 name="camera" size={16} color={colors.primary} />
               <Text style={styles.aiScanText}>Camera</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={[styles.aiScanButton, styles.aiButtonHalf]}
               onPress={uploadFromGallery}
@@ -271,7 +229,6 @@ export default function CreateExpenseScreen() {
               <Text style={styles.aiScanText}>Gallery</Text>
             </TouchableOpacity>
           </View>
-
           {isScanning && !isCameraActive && (
             <View style={styles.inlineScanningBadge}>
               <ActivityIndicator color={colors.primary} size="small" />
@@ -280,20 +237,17 @@ export default function CreateExpenseScreen() {
               </Text>
             </View>
           )}
-
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>OR ENTER MANUALLY</Text>
             <View style={styles.dividerLine} />
           </View>
-
           <Input
             label="Description"
             placeholder="Dinner, Taxi, Groceries..."
             value={description}
             onChangeText={setDescription}
           />
-
           <Input
             label="Amount (in USD)"
             placeholder="0.00"
@@ -301,7 +255,6 @@ export default function CreateExpenseScreen() {
             onChangeText={setAmount}
             keyboardType="decimal-pad"
           />
-
           <View style={styles.pickerContainer}>
             <Text style={styles.pickerLabel}>Split Option</Text>
             <View style={styles.pickerWrapper}>
@@ -317,7 +270,6 @@ export default function CreateExpenseScreen() {
               </Picker>
             </View>
           </View>
-
           {(splitType === "custom" || splitType === "percentage") &&
             members.length > 0 && (
               <View style={styles.sharesContainer}>
@@ -326,7 +278,6 @@ export default function CreateExpenseScreen() {
                     ? "Enter Custom Amounts ($)"
                     : "Enter Percentages (%)"}
                 </Text>
-
                 {members.map((member) => (
                   <View key={member._id} style={styles.shareRow}>
                     <Text style={styles.shareName}>
@@ -344,14 +295,12 @@ export default function CreateExpenseScreen() {
                 ))}
               </View>
             )}
-
           <Button
             title="Add Expense"
             onPress={handleAddExpense}
             loading={loading}
             style={styles.actionButton}
           />
-
           <Button
             title="Cancel"
             onPress={() => router.back()}
@@ -363,7 +312,6 @@ export default function CreateExpenseScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     padding: 24,
@@ -415,7 +363,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(153, 69, 255, 0.1)", // Subtle purple tint for AI action
+    backgroundColor: "rgba(153, 69, 255, 0.1)", 
     padding: 12,
     borderRadius: 12,
     marginBottom: 24,
@@ -455,7 +403,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 14,
   },
-  // Camera specific styles
   cameraContainer: {
     flex: 1,
     backgroundColor: "#000",
@@ -540,7 +487,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: "hidden", // Ensures picker doesn't bleed out of rounded corners
+    overflow: "hidden", 
   },
   picker: {
     height: 56,

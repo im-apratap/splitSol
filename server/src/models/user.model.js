@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/env.js";
-
 const userSchema = mongoose.Schema(
   {
     name: {
@@ -46,7 +45,6 @@ const userSchema = mongoose.Schema(
   },
   { timestamps: true },
 );
-
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     { userId: this._id, email: this.email, username: this.username },
@@ -54,11 +52,9 @@ userSchema.methods.generateAccessToken = function () {
     { expiresIn: "1d" },
   );
 };
-
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign({ userId: this._id }, ENV.REFRESH_TOKEN_SECRET, {
     expiresIn: "10d",
   });
 };
-
 export const User = mongoose.model("User", userSchema);

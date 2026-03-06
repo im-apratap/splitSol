@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const HistorySchema = mongoose.Schema(
   {
     user: {
@@ -34,5 +33,4 @@ const HistorySchema = mongoose.Schema(
   },
   { timestamps: true },
 );
-
 export const History = mongoose.model("History", HistorySchema);

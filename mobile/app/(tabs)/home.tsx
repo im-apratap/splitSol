@@ -15,7 +15,6 @@ import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { router, useFocusEffect } from "expo-router";
 import { useSolPrice } from "../../src/hooks/useSolPrice";
-
 export default function HomeScreen() {
   const [groups, setGroups] = useState([]);
   const [user, setUser] = useState<any>(null);
@@ -23,11 +22,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const { solPrice, loading: priceLoading } = useSolPrice();
-
   const fetchData = async () => {
     try {
       setError("");
-      // Using standard REST
       const [groupsRes, userRes] = await Promise.all([
         apiClient.get("/groups"),
         apiClient.get("/users/me"),
@@ -43,18 +40,15 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   };
-
   useFocusEffect(
     React.useCallback(() => {
       fetchData();
     }, []),
   );
-
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
   };
-
   const renderGroupItem = ({ item }: { item: any }) => (
     <Card style={styles.groupCard}>
       <View style={styles.groupCardImagePlaceholder}>
@@ -79,7 +73,6 @@ export default function HomeScreen() {
       </View>
     </Card>
   );
-
   if (loading && !refreshing) {
     return (
       <Container style={styles.centerElement}>
@@ -87,7 +80,6 @@ export default function HomeScreen() {
       </Container>
     );
   }
-
   return (
     <Container>
       <View style={styles.content}>
@@ -97,8 +89,7 @@ export default function HomeScreen() {
           </Text>
           <Text style={styles.greetingSubtitle}>Welcome to SolShare</Text>
         </View>
-
-        {/* Live SOL Price Banner */}
+        {}
         <View style={styles.priceBanner}>
           <View style={styles.priceBannerLeft}>
             <View style={styles.solIconContainer}>
@@ -120,8 +111,7 @@ export default function HomeScreen() {
             <Text style={styles.priceBannerBadgeText}>LIVE</Text>
           </View>
         </View>
-
-        {/* Categories / Pill filters */}
+        {}
         <View style={styles.filtersContainer}>
           <View style={[styles.filterPill, styles.filterPillActive]}>
             <Text style={styles.filterPillTextActive}>Your Groups</Text>
@@ -133,14 +123,12 @@ export default function HomeScreen() {
             <Text style={styles.filterPillText}>Settled</Text>
           </View>
         </View>
-
         {error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
             <Button title="Retry" onPress={fetchData} variant="secondary" />
           </View>
         ) : null}
-
         <FlatList
           data={groups}
           keyExtractor={(item: any) => item._id}
@@ -168,8 +156,7 @@ export default function HomeScreen() {
             />
           }
         />
-
-        {/* Floating Add Button overlaying the bottom padding */}
+        {}
         <View style={styles.floatingActionWrapper}>
           <Button
             title="+ Create Group"
@@ -181,7 +168,6 @@ export default function HomeScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
@@ -199,7 +185,7 @@ const styles = StyleSheet.create({
   greetingTitle: {
     fontSize: 28,
     fontWeight: "800",
-    color: colors.primary, // Dark black text
+    color: colors.primary, 
     letterSpacing: -0.5,
   },
   greetingSubtitle: {
@@ -300,7 +286,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   groupCard: {
-    padding: 16, // Override standard card padding for tighter image bounds
+    padding: 16, 
   },
   groupCardImagePlaceholder: {
     backgroundColor: colors.surfaceLight,
@@ -331,11 +317,11 @@ const styles = StyleSheet.create({
   floatingArrowBtn: {
     width: 48,
     height: 48,
-    borderRadius: 24, // perfectly circular
+    borderRadius: 24, 
     paddingHorizontal: 0,
     paddingVertical: 0,
     marginVertical: 0,
-    minHeight: 0, // override generic button minHeight
+    minHeight: 0, 
   },
   iconOverlay: {
     position: "absolute",

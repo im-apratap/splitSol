@@ -16,13 +16,11 @@ import { colors } from "../../src/theme/colors";
 import { apiClient } from "../../src/api/client";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { format } from "date-fns";
-
 export default function ExpenseDetailsScreen() {
   const { id } = useLocalSearchParams();
   const [expense, setExpense] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
-
   const fetchExpenseData = useCallback(async () => {
     try {
       setLoading(true);
@@ -30,7 +28,6 @@ export default function ExpenseDetailsScreen() {
         apiClient.get(`/expenses/${id}`),
         apiClient.get("/users/me"),
       ]);
-
       setExpense(expenseRes.data.data);
       setCurrentUserId(userRes.data.data._id);
     } catch (err: any) {
@@ -41,13 +38,11 @@ export default function ExpenseDetailsScreen() {
       setLoading(false);
     }
   }, [id]);
-
   useFocusEffect(
     useCallback(() => {
       fetchExpenseData();
     }, [fetchExpenseData]),
   );
-
   const handleDelete = () => {
     Alert.alert(
       "Delete Expense",
@@ -73,7 +68,6 @@ export default function ExpenseDetailsScreen() {
       ],
     );
   };
-
   if (loading) {
     return (
       <Container style={styles.centerElement}>
@@ -81,10 +75,7 @@ export default function ExpenseDetailsScreen() {
       </Container>
     );
   }
-
   if (!expense) return null;
-
-  // Render logic for different split types
   const renderSplitDetails = () => {
     return (
       <View style={styles.splitSection}>
@@ -92,7 +83,6 @@ export default function ExpenseDetailsScreen() {
         <Text style={styles.splitTypeBadge}>
           {expense.splitType.toUpperCase()}
         </Text>
-
         {expense.splitType === "equal" ? (
           <View style={styles.sharesList}>
             {expense.splitAmong.map((user: any) => (
@@ -140,10 +130,8 @@ export default function ExpenseDetailsScreen() {
       </View>
     );
   };
-
   const isPayer =
     expense.paidBy?._id === currentUserId || expense.paidBy === currentUserId;
-
   return (
     <Container>
       <View style={styles.header}>
@@ -153,7 +141,6 @@ export default function ExpenseDetailsScreen() {
         <Text style={styles.title}>Expense Details</Text>
         <View style={{ width: 44 }} />
       </View>
-
       <ScrollView contentContainerStyle={styles.content}>
         <Card style={styles.summaryCard}>
           <View style={styles.iconCircle}>
@@ -164,7 +151,6 @@ export default function ExpenseDetailsScreen() {
           <Text style={styles.expenseDate}>
             {format(new Date(expense.createdAt), "MMM do, yyyy • h:mm a")}
           </Text>
-
           <View style={styles.paidByContainer}>
             <Text style={styles.paidByText}>Paid by </Text>
             <Text style={styles.paidByName}>
@@ -172,10 +158,8 @@ export default function ExpenseDetailsScreen() {
             </Text>
           </View>
         </Card>
-
         {renderSplitDetails()}
       </ScrollView>
-
       <View style={styles.footer}>
         <Button
           title="Edit Expense"
@@ -194,7 +178,6 @@ export default function ExpenseDetailsScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   centerElement: {
     alignItems: "center",

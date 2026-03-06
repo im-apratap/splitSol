@@ -16,7 +16,6 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { connectWallet } from "../../src/utils/solana";
 import { useSolPrice } from "../../src/hooks/useSolPrice";
-
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [balance, setBalance] = useState<string | null>(null);
@@ -24,11 +23,9 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [checkingBalance, setCheckingBalance] = useState(false);
   const { solPrice } = useSolPrice();
-
   useEffect(() => {
     fetchProfile();
   }, []);
-
   const fetchProfile = async () => {
     try {
       const res = await apiClient.get("/users/me");
@@ -39,7 +36,6 @@ export default function ProfileScreen() {
       setLoading(false);
     }
   };
-
   const checkBalance = async () => {
     try {
       setCheckingBalance(true);
@@ -54,7 +50,6 @@ export default function ProfileScreen() {
       setCheckingBalance(false);
     }
   };
-
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to sign out?", [
       {
@@ -67,7 +62,6 @@ export default function ProfileScreen() {
           try {
             await apiClient.post("/users/logout");
           } catch {
-            // Ignore failure on backend, still clear locally
           }
           await clearTokens();
           router.replace("/(auth)/login");
@@ -76,7 +70,6 @@ export default function ProfileScreen() {
       },
     ]);
   };
-
   const handleConnectWallet = async () => {
     try {
       const pubKey = await connectWallet();
@@ -90,7 +83,6 @@ export default function ProfileScreen() {
       }
     }
   };
-
   if (loading) {
     return (
       <Container style={styles.centerElement}>
@@ -98,7 +90,6 @@ export default function ProfileScreen() {
       </Container>
     );
   }
-
   return (
     <Container>
       <View style={styles.content}>
@@ -106,12 +97,10 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <FontAwesome5 name="user-alt" size={40} color={colors.primary} />
           </View>
-
           <Text style={styles.name}>{user?.name || "User"}</Text>
           <Text style={styles.username}>@{user?.username || "unknown"}</Text>
           <Text style={styles.email}>{user?.email}</Text>
         </Card>
-
         <Text style={styles.sectionTitle}>Wallet Details</Text>
         <Card style={styles.walletCard}>
           <FontAwesome5
@@ -138,7 +127,6 @@ export default function ProfileScreen() {
                 style={{ marginTop: 8 }}
               />
             )}
-
             <View style={styles.balanceContainer}>
               {balance === null ? (
                 <Button
@@ -162,9 +150,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
-
         <View style={{ flex: 1 }} />
-
         <Button
           title="Sign Out"
           onPress={handleLogout}
@@ -175,7 +161,6 @@ export default function ProfileScreen() {
     </Container>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
@@ -202,7 +187,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: "800",
-    color: colors.primary, // Dark black text
+    color: colors.primary, 
   },
   username: {
     fontSize: 16,
