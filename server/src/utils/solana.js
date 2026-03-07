@@ -5,8 +5,7 @@ import {
   SystemProgram,
   clusterApiUrl,
   TransactionInstruction,
-  getCachedExchangeRates,
-} from "../utils/solana.js";
+} from "@solana/web3.js";
 const MEMO_PROGRAM_ID = new PublicKey(
   "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcQb",
 );
