@@ -7,12 +7,12 @@ if (typeof global.Buffer === "undefined") {
 }
 export const APP_IDENTITY = {
   name: "SolShare",
-  uri: "https://im-apratap.github.io/solshare", 
-  icon: "favicon.ico", 
+  uri: "https://im-apratap.github.io/solshare",
+  icon: "favicon.ico",
 };
-export const SOLANA_CLUSTER = "devnet";
+export const SOLANA_CLUSTER = "mainnet-beta";
 export const connection = new Connection(
-  "https://api.devnet.solana.com",
+  "https://api.mainnet-beta.solana.com",
   "confirmed",
 );
 export function getSolscanUrl(
@@ -32,7 +32,7 @@ export async function openSolscanTx(txSignature: string): Promise<void> {
 export async function connectWallet(): Promise<string> {
   return await transact(async (wallet) => {
     const authorizationResult = await wallet.authorize({
-      cluster: "devnet",
+      cluster: "mainnet-beta",
       identity: APP_IDENTITY,
     });
     return authorizationResult.accounts[0].address;
@@ -43,7 +43,7 @@ export async function signTransactionOnDevice(
 ): Promise<string> {
   return await transact(async (wallet) => {
     await wallet.authorize({
-      cluster: "devnet",
+      cluster: "mainnet-beta",
       identity: APP_IDENTITY,
     });
     const txBuffer = Buffer.from(base64Transaction, "base64");
