@@ -217,7 +217,7 @@ export default function CreateSettlementScreen() {
         <View style={styles.form}>
           <View style={styles.checkoutBanner}>
             <FontAwesome5 name="wallet" size={24} color={colors.secondary} />
-            <Text style={styles.checkoutText}>Solana Devnet TX</Text>
+            <Text style={styles.checkoutText}>Solana Mainnet TX</Text>
           </View>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           {members.length === 0 ? (
