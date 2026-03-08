@@ -2,6 +2,12 @@
 
 SolShare is a mobile-first application natively built on the Solana blockchain using the Solana Mobile Stack (SMS). It solves the problem of splitting fiat expenses (like dinners, rent, trips) directly into cryptocurrency, providing real-time USD/SOL pricing and executing settlements directly on-chain using the Mobile Wallet Adapter (MWA).
 
+## Demo Video
+
+https://github.com/user-attachments/assets/c9ea6599-3682-4b3c-a6ae-76705b10415e
+
+Video Url - https://www.youtube.com/shorts/hNDvW_cN51s
+
 ## Features
 
 - **Mobile Foundation First**: Built natively using React Native and Expo. Seamlessly interacts with mobile hardware and Solana Mobile Stack features directly designed for smartphones.
@@ -71,9 +77,3 @@ EXPO_PUBLIC_SOLANA_NETWORK=devnet
 - [x] Functional Android APK -> (`eas build`)
 - [x] Meaningful Network Interactions -> App creates live blockchain transactions.
 - [x] Built for Mobile -> Entirely native React Navigation with deep-linking protocols.
-
-## Screenshots and Demo
-
-<Insert Demo Video Link Here>
-
-<Insert Pitch Deck Link Here>
