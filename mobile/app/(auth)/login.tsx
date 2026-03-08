@@ -59,7 +59,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={styles.title}>
-              Split<Text style={styles.highlight}>SOL</Text>
+              Sol<Text style={styles.highlight}>Share</Text>
             </Text>
             <Text style={styles.subtitle}>Settle up on the Solana network</Text>
           </View>
@@ -116,11 +116,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: "800",
-    color: colors.primary, 
+    color: colors.primary,
     letterSpacing: -1,
   },
   highlight: {
-    color: colors.secondary, 
+    color: colors.secondary,
   },
   subtitle: {
     fontSize: 16,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkText: {
-    color: colors.primary, 
+    color: colors.primary,
     fontSize: 14,
     fontWeight: "700",
   },
